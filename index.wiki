@@ -1,0 +1,26 @@
+= ChangyongID的个人主页 =
+
+== 这是什么 ==
+欢迎来到我的blog,这里主要记录一些笔记和感兴趣的东西.
+用[http://code.google.com/p/vimwiki/ vimwiki]写成,
+配合[http://github.com/ github]的[http://pages.github.com/ gh-pages]来完成这
+个blog.
+
+== 计算机工具 ==
+这些工具大大提高了我的工作效率,这里记录这些工具软件的学习和使用笔记,以作备忘
+- [[vim]]
+- [[git]]
+- [[Linux 使用]]
+
+== 编程 ==
+对Linux一直有浓厚的兴趣,而且目前的工作也一直是在Linux环境下写些代码.这里记录
+平时的coding笔记和心得.
+- [[Programming]]
+- [[Linux Kernel]]
+- [[Linux Driver]]
+
+== 其它 ==
+- [[diary/diary|跑步日记]]
+- [[Others]]
+
+%title ChangyongID的个人主页
