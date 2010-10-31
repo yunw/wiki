@@ -16,8 +16,8 @@
 对Linux一直有浓厚的兴趣,而且目前的工作也一直是在Linux环境下写些代码.这里记录
 平时的coding笔记和心得.
 - [[Programming]]
-- [[Linux Kernel]]
-- [[Linux Driver]]
+- [[OS]]
+- [[Driver]]
 
 == 其它 ==
 - [[diary/diary|跑步日记]]

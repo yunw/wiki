@@ -1,0 +1,4 @@
+
+# [[Operatins system interfaces]]
+# [[x86]]
+
