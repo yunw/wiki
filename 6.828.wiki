@@ -1,4 +1,5 @@
 
 # [[Operatins system interfaces]]
 # [[x86]]
+# [[lab 1]]
 
