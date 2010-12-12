@@ -22,5 +22,6 @@
 == 其它 ==
 - [[diary/diary|跑步日记]]
 - [[Others]]
+- [[读书]]
 
 %title ChangyongID的个人主页
