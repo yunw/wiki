@@ -1,0 +1,191 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>字符编码知识encoding</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<h1 id="toc_1">字符编码的初步认识</h1>
+
+<p>
+对编码的认识一直很模糊,这里做了几个小测试,来初步了解一下.
+需要申明的是,编码与编码的存储格式是两个不同的概念.比如utf-8 和 ucs-16都是
+Unicode编码的一种存储,传输格式.
+</p>
+
+<p>
+字符编码的英文是character encoding, 而utf-8是一种格式,即format.了解编码格式时
+查了unicode官网的大量资料,从来没有任何一句把utf8描述为encoding. 国内的一些资料
+和文献将unicode和utf8都称为'编码',我想这里面肯定是有翻译的原因,但无论如何,它们
+根本不是一个层面的东西.
+</p>
+
+<hr />
+
+<h2 id="toc_1.1">文本的存储</h2>
+
+<p>
+先来做一个小测试
+</p>
+<ol>
+<li>
+用vim新建一个文件/tmp/t,输入'你好'两个字,以utf-8编码保存.用下面的代码读它
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;unistd.h&gt;
+
+int main(void)
+{
+	int fd = open("/tmp/t", O_RDWR);
+	char ret;
+
+	while (read(fd, &amp;ret, 1) == 1)
+		printf("ret = %o\n", (unsigned char)ret);
+
+	close(fd);
+	return 0;
+}
+</pre>
+</li>
+</ol>
+<p>
+其实用od -t x1 /tmp/t 就可以看到, 或hexdump /tmp/t.
+</p>
+<pre>
+ret = e4
+ret = bd
+ret = a0
+ret = e5
+ret = a5
+ret = bd
+ret = a
+</pre>
+<p>
+说明此时文件里存储的是 e4 bd a0 e5 a5 bd, 最后的a是换行符'\n'.
+</p>
+
+<ol>
+<li>
+再用vim打开/tmp/t,并以gb2312编码保存(set fileencoding=gb2312)
+<pre>
+ret = c4
+ret = e3
+ret = ba
+ret = c3
+ret = a
+</pre>
+</li>
+</ol>
+<p>
+此时存储为 c4 e3 ba c3
+</p>
+
+<hr />
+
+<h2 id="toc_1.2">GB2312</h2>
+<p>
+对于'你'这个字,在GB2312中可作如下分析
+</p>
+
+<pre>
+36 67 	&lt;- 查码表中,它在36区的67位上
+24 43 	&lt;- 十六进制
+a0 a0 + &lt;- 高低位分别加上a0
+-----------
+c4 e3 	&lt;- 得到'你'的GB2312编码,最后'你'存储为文本便是两个字节:c4e3
+</pre>
+
+<hr />
+
+<h2 id="toc_1.3">文本操作</h2>
+<p>
+再来一个小测试程序
+</p>
+<pre>
+#include &lt;stdio.h&gt;
+
+int main(void)
+{
+	const char *t = "你好";
+	printf("%s\n", t);
+	while (*t)
+		printf("%x\x0a", (unsigned char)*t++);
+	printf("\344\275\240\xe5\xa5\xbd\x0a");
+	printf("\xe4\xbd\xa0\xe5\xa5\xbd\x0a");
+	return 0;
+}
+</pre>
+<p>
+将上面的代码以utf8编码格式保存.编码运行在我的终端得到如下结果:
+</p>
+<pre>
+你好
+e4
+bd
+a0
+e5
+a5
+bd
+你好
+你好
+</pre>
+<p>
+可以得到的信息时此时'你好'存储为 e4 bd a0 e5 a5 bd
+</p>
+
+<p>
+而把代码保存为gb2312,则得到的结果为:
+</p>
+<pre>
+���
+c4
+e3
+ba
+c3
+你好
+你好
+</pre>
+<p>
+第一行得到的是乱码.而最后两行却得到了正确的显示.在打印时,printf只管把字符'丢'
+给终端(stdout), 而具体如何解释这些字符,就是终端的工作了.我的终端现在的
+character encoding 设置为utf8,所以最后两行的字符被成功解释为'你好'.第一行的字
+符按utf8的编码格式来解释不能成功,显示为乱码.
+</p>
+
+<hr />
+
+<h2 id="toc_1.4">小结</h2>
+<p>
+读一个文本文件时,拿到的是它们存储在磁本上的数据.如何处理这些数据,正确的解析它
+们,并最终正确的显示在屏幕上,这中间有几个步骤:
+</p>
+<ol>
+<li>
+读入数据
+</li>
+<li>
+解析它是何种编码(可以看一下enca的代码)
+</li>
+<li>
+得到编码后就需要字库引擎了
+</li>
+<ul>
+<li>
+到字库里去找这个字符对应的字形
+</li>
+<li>
+或转为某一编码格式,然后再去找字符对应的字形
+</li>
+</ul>
+<li>
+拿到字形,画到屏幕上
+</li>
+</ol>
+ 
+<p>
+<strong>以上仅是我现在的理解</strong>
+</p>
+
+</body>
+</html>

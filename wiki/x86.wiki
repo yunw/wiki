@@ -1,0 +1,536 @@
+%nohtml
+
+- EIP is incremented after each instruction
+- Instructions are different length
+- EIP modified by CALL, RET, JMP, and conditional JMP
+
+*eax, ebx, ecx, edx, edi, esi, ebp, esp, eip*
+{{{
+31             16 15   8 7      0   16-bit   32-bit
+`+---------------+------+-------+`
+general registers:  
+                   AH      AL        AX       EAX
+                   BH      BL        BX       EBX
+                   CH      CL        CX       ECX
+                   DH      DL        DX       EDX
+                   --------------------------------------------
+index registers(often used as pointers):
+                                     di       edi
+				     si       esi
+				     bp       ebp
+				     sp       esp
+- segment registers(16-bit): 
+	code segment: cs 
+	data segment: ds
+	stack segment: ss
+	extra segment: es
+	other segment(their name s do not stand for anything): fs, gs
+- instruction pointer(ip) register
+	used with cs register to keep track of the address of the next 
+	instruction is executed
+- flags regitster(FLAGS)
+	stores important information about the results of a previous
+	instruction
+- control registers: cr0, cr2, cr3, cr4
+- debug registers: dr0, dr1, dr2, dr3
+- global/local descriptor table pseudo-registers: gdtr, ldtr
+}}}
+
+*By convention some registers for special puposes*
+
+
+
+pushl %eax => subl $4, %esp; movl %eax, (%esp)
+popl %eax  => movl (%esp), %eax; addl $4, %esp
+call 0x12345 => pushl %eip; movl $0x12345, %eip
+ret => popl %eip
+
+
+
+== 8086 ==
+16registers + 20-bit bus addresses
+- CS: code segment, for EIP
+- SS: stack segment, for SP and BP
+- DS: data segment for load/store via other registers
+- ES: another data segment, destination for string ops
+
+== 80386 ==
+32 bit data and bus address
+- Backwards compatibility:
+  * Boots in 16-bit mode, and boot.S switches to 32 bit mode
+  * Prefix 0x66 gets you 32 bit mode:
+     `movw = 0x66 movw`
+  * .code32 in boot.S tells assembler to insert 0x66
+
+== x86 instruction set ==
+- Data movement: mov, push, pop, ...
+- Arithmetic: test, shl, add, ...
+- I/O: in, out, ...
+- Control: jmp, jz, jnz, call, ret
+- String: rep, movsb, ...
+- System: iret, int, ...
+*AT&T(gcc/gas) syntax: operate src, dst*
+
+One reson memory access is so much slower than register access is that the
+memory is a set of chips physically separate from the processor chip.
+
+== BIOS ==
+# stored in flash memory on the motherboard
+# prepare the hardware and then transfer control to the operating system.
+# it transfers control to code loaded from the boot sector, the first 
+  512-byte sector of the boot disk
+# loads a copy of that sector into memory at 0x7c00, and jumps to there
+
+=== bios前几条命令 ===
+[f000:fff0] 0xffff0:	ljmp   $0xf000,$0xe05b
+[f000:e05b] 0xfe05b:	jmp    0xc81e
+[f000:c81e] 0xfc81e:	mov    %cr0,%eax
+[f000:c821] 0xfc821:	and    $0x9fffffff,%eax
+[f000:c827] 0xfc827:	mov    %eax,%cr0
+[f000:c82a] 0xfc82a:	cli    
+[f000:c82b] 0xfc82b:	cld    
+[f000:c82c] 0xfc82c:	mov    $0x8f,%eax
+[f000:c832] 0xfc832:	out    %al,$0x70
+0x0000c832 in ?? ()
+[f000:c834] 0xfc834:	in     $0x71,%al
+0x0000c834 in ?? ()
+[f000:c836] 0xfc836:	cmp    $0x0,%al
+0x0000c836 in ?? ()
+[f000:c838] 0xfc838:	jne    0xfc84d
+0x0000c838 in ?? ()
+[f000:c83a] 0xfc83a:	xor    %ax,%ax
+0x0000c83a in ?? ()
+[f000:c83c] 0xfc83c:	movl   %ax,%ss
+0x0000c83c in ?? ()
+[f000:c83e] 0xfc83e:	mov    $0x7000,%esp
+0x0000c83e in ?? ()
+[f000:c844] 0xfc844:	pushl  $0xf1184
+0x0000c844 in ?? ()
+[f000:c84a] 0xfc84a:	jmp    0xfeae
+0x0000c84a in ?? ()
+[f000:feae] 0xffeae:	mov    %eax,%ecx
+0x0000feae in ?? ()
+[f000:feb1] 0xffeb1:	cli    
+0x0000feb1 in ?? ()
+[f000:feb2] 0xffeb2:	cld    
+0x0000feb2 in ?? ()
+[f000:feb3] 0xffeb3:	mov    $0x8f,%eax
+0x0000feb3 in ?? ()
+[f000:feb9] 0xffeb9:	out    %al,$0x70
+0x0000feb9 in ?? ()
+[f000:febb] 0xffebb:	in     $0x71,%al
+0x0000febb in ?? ()
+[f000:febd] 0xffebd:	in     $0x92,%al
+0x0000febd in ?? ()
+[f000:febf] 0xffebf:	or     $0x2,%al
+0x0000febf in ?? ()
+[f000:fec1] 0xffec1:	out    %al,$0x92
+0x0000fec1 in ?? ()
+[f000:fec3] 0xffec3:	lidtw  %cs:-12756
+0x0000fec3 in ?? ()
+[f000:fec9] 0xffec9:	lgdtw  %cs:-12688
+0x0000fec9 in ?? ()
+[f000:fecf] 0xffecf:	mov    %cr0,%eax
+0x0000fecf in ?? ()
+[f000:fed2] 0xffed2:	or     $0x1,%eax
+0x0000fed2 in ?? ()
+[f000:fed6] 0xffed6:	mov    %eax,%cr0
+0x0000fed6 in ?? ()
+[f000:fed9] 0xffed9:	ljmpl  $0x8,$0xffee1
+0x0000fed9 in ?? ()
+The target architecture is assumed to be i386
+0xfff0:	add    %al,(%eax)
+0x0000fff0 in ?? ()
+The target architecture is assumed to be i386
+0xffee6:	movl   %eax,%ds
+0x000ffee6 in ?? ()
+0xffee8:	movl   %eax,%es
+0x000ffee8 in ?? ()
+0xffeea:	movl   %eax,%ss
+0x000ffeea in ?? ()
+0xffeec:	movl   %eax,%fs
+0x000ffeec in ?? ()
+0xffeee:	movl   %eax,%gs
+0x000ffeee in ?? ()
+0xffef0:	mov    %ecx,%eax
+0x000ffef0 in ?? ()
+0xffef2:	ret    
+0x000ffef2 in ?? ()
+0xf1184:	push   %ebp
+0x000f1184 in ?? ()
+0xf1185:	push   %edi
+0x000f1185 in ?? ()
+0xf1186:	push   %esi
+0x000f1186 in ?? ()
+0xf1187:	push   %ebx
+0x000f1187 in ?? ()
+0xf1188:	sub    $0xa0,%esp
+0x000f1188 in ?? ()
+0xf118e:	xor    %edx,%edx
+0x000f118e in ?? ()
+0xf1190:	mov    %dl,%al
+0x000f1190 in ?? ()
+0xf1192:	out    %al,$0xd
+0x000f1192 in ?? ()
+0xf1194:	out    %al,$0xda
+0x000f1194 in ?? ()
+0xf1196:	mov    $0xc0,%al
+0x000f1196 in ?? ()
+0xf1198:	out    %al,$0xd6
+0x000f1198 in ?? ()
+0xf119a:	mov    %dl,%al
+0x000f119a in ?? ()
+0xf119c:	out    %al,$0xd4
+0x000f119c in ?? ()
+0xf119e:	push   $0xf40a4
+0x000f119e in ?? ()
+0xf11a3:	push   $0xf3892
+0x000f11a3 in ?? ()
+0xf11a8:	call   0xe6169
+0x000f11a8 in ?? ()
+0xe6169:	lea    0x8(%esp),%ecx
+0x000e6169 in ?? ()
+0xe616d:	mov    0x4(%esp),%edx
+0x000e616d in ?? ()
+0xe6171:	mov    $0xf40d4,%eax
+0x000e6171 in ?? ()
+0xe6176:	call   0xe5eab
+0x000e6176 in ?? ()
+0xe5eab:	push   %ebp
+0x000e5eab in ?? ()
+0xe5eac:	push   %edi
+0x000e5eac in ?? ()
+0xe5ead:	push   %esi
+0x000e5ead in ?? ()
+0xe5eae:	push   %ebx
+0x000e5eae in ?? ()
+0xe5eaf:	sub    $0xc,%esp
+0x000e5eaf in ?? ()
+0xe5eb2:	mov    %eax,%ebx
+0x000e5eb2 in ?? ()
+0xe5eb4:	mov    %ecx,%esi
+0x000e5eb4 in ?? ()
+0xe5eb6:	mov    %edx,%edi
+0x000e5eb6 in ?? ()
+0xe5eb8:	mov    (%edi),%dl
+0x000e5eb8 in ?? ()
+0xe5eba:	test   %dl,%dl
+0x000e5eba in ?? ()
+0xe5ebc:	je     0xe60f4
+0x000e5ebc in ?? ()
+0xe5ec2:	cmp    $0x25,%dl
+0x000e5ec2 in ?? ()
+0xe5ec5:	je     0xe5ecf
+0x000e5ec5 in ?? ()
+0xe5ec7:	movsbl %dl,%edx
+0x000e5ec7 in ?? ()
+0xe5eca:	jmp    0xe60ea
+0x000e5eca in ?? ()
+0xe60ea:	mov    %ebx,%eax
+0x000e60ea in ?? ()
+0xe60ec:	call   *(%ebx)
+0x000e60ec in ?? ()
+0xe5e50:	mov    %edx,%eax
+0x000e5e50 in ?? ()
+0xe5e52:	mov    $0x402,%edx
+0x000e5e52 in ?? ()
+0xe5e57:	out    %al,(%dx)
+0x000e5e57 in ?? ()
+0xe5e58:	ret    
+0x000e5e58 in ?? ()
+0xe60ee:	inc    %edi
+0x000e60ee in ?? ()
+0xe60ef:	jmp    0xe5eb8
+0x000e60ef in ?? ()
+0xe5eb8:	mov    (%edi),%dl
+0x000e5eb8 in ?? ()
+0xe5eba:	test   %dl,%dl
+0x000e5eba in ?? ()
+0xe5ebc:	je     0xe60f4
+0x000e5ebc in ?? ()
+0xe5ec2:	cmp    $0x25,%dl
+0x000e5ec2 in ?? ()
+0xe5ec5:	je     0xe5ecf
+0x000e5ec5 in ?? ()
+0xe5ec7:	movsbl %dl,%edx
+0x000e5ec7 in ?? ()
+0xe5eca:	jmp    0xe60ea
+0x000e5eca in ?? ()
+0xe60ea:	mov    %ebx,%eax
+0x000e60ea in ?? ()
+0xe60ec:	call   *(%ebx)
+0x000e60ec in ?? ()
+0xe5e50:	mov    %edx,%eax
+0x000e5e50 in ?? ()
+0xe5e52:	mov    $0x402,%edx
+0x000e5e52 in ?? ()
+0xe5e57:	out    %al,(%dx)
+0x000e5e57 in ?? ()
+0xe5e58:	ret    
+0x000e5e58 in ?? ()
+0xe60ee:	inc    %edi
+0x000e60ee in ?? ()
+0xe60ef:	jmp    0xe5eb8
+0x000e60ef in ?? ()
+0xe5eb8:	mov    (%edi),%dl
+0x000e5eb8 in ?? ()
+0xe5eba:	test   %dl,%dl
+0x000e5eba in ?? ()
+0xe5ebc:	je     0xe60f4
+0x000e5ebc in ?? ()
+0xe5ec2:	cmp    $0x25,%dl
+0x000e5ec2 in ?? ()
+0xe5ec5:	je     0xe5ecf
+0x000e5ec5 in ?? ()
+0xe5ec7:	movsbl %dl,%edx
+0x000e5ec7 in ?? ()
+0xe5eca:	jmp    0xe60ea
+0x000e5eca in ?? ()
+0xe60ea:	mov    %ebx,%eax
+0x000e60ea in ?? ()
+0xe60ec:	call   *(%ebx)
+0x000e60ec in ?? ()
+0xe5e50:	mov    %edx,%eax
+0x000e5e50 in ?? ()
+0xe5e52:	mov    $0x402,%edx
+0x000e5e52 in ?? ()
+0xe5e57:	out    %al,(%dx)
+0x000e5e57 in ?? ()
+0xe5e58:	ret    
+0x000e5e58 in ?? ()
+0xe60ee:	inc    %edi
+0x000e60ee in ?? ()
+0xe60ef:	jmp    0xe5eb8
+0x000e60ef in ?? ()
+0xe5eb8:	mov    (%edi),%dl
+0x000e5eb8 in ?? ()
+0xe5eba:	test   %dl,%dl
+0x000e5eba in ?? ()
+0xe5ebc:	je     0xe60f4
+0x000e5ebc in ?? ()
+0xe5ec2:	cmp    $0x25,%dl
+0x000e5ec2 in ?? ()
+0xe5ec5:	je     0xe5ecf
+0x000e5ec5 in ?? ()
+0xe5ec7:	movsbl %dl,%edx
+0x000e5ec7 in ?? ()
+0xe5eca:	jmp    0xe60ea
+0x000e5eca in ?? ()
+0xe60ea:	mov    %ebx,%eax
+0x000e60ea in ?? ()
+0xe60ec:	call   *(%ebx)
+0x000e60ec in ?? ()
+0xe5e50:	mov    %edx,%eax
+0x000e5e50 in ?? ()
+0xe5e52:	mov    $0x402,%edx
+0x000e5e52 in ?? ()
+0xe5e57:	out    %al,(%dx)
+0x000e5e57 in ?? ()
+0xe5e58:	ret    
+0x000e5e58 in ?? ()
+0xe60ee:	inc    %edi
+0x000e60ee in ?? ()
+0xe60ef:	jmp    0xe5eb8
+0x000e60ef in ?? ()
+0xe5eb8:	mov    (%edi),%dl
+0x000e5eb8 in ?? ()
+0xe5eba:	test   %dl,%dl
+0x000e5eba in ?? ()
+0xe5ebc:	je     0xe60f4
+0x000e5ebc in ?? ()
+0xe5ec2:	cmp    $0x25,%dl
+0x000e5ec2 in ?? ()
+0xe5ec5:	je     0xe5ecf
+0x000e5ec5 in ?? ()
+0xe5ec7:	movsbl %dl,%edx
+0x000e5ec7 in ?? ()
+0xe5eca:	jmp    0xe60ea
+0x000e5eca in ?? ()
+0xe60ea:	mov    %ebx,%eax
+0x000e60ea in ?? ()
+0xe60ec:	call   *(%ebx)
+0x000e60ec in ?? ()
+0xe5e50:	mov    %edx,%eax
+0x000e5e50 in ?? ()
+0xe5e52:	mov    $0x402,%edx
+0x000e5e52 in ?? ()
+0xe5e57:	out    %al,(%dx)
+0x000e5e57 in ?? ()
+0xe5e58:	ret    
+0x000e5e58 in ?? ()
+0xe60ee:	inc    %edi
+0x000e60ee in ?? ()
+0xe60ef:	jmp    0xe5eb8
+0x000e60ef in ?? ()
+0xe5eb8:	mov    (%edi),%dl
+0x000e5eb8 in ?? ()
+0xe5eba:	test   %dl,%dl
+0x000e5eba in ?? ()
+0xe5ebc:	je     0xe60f4
+0x000e5ebc in ?? ()
+0xe5ec2:	cmp    $0x25,%dl
+0x000e5ec2 in ?? ()
+0xe5ec5:	je     0xe5ecf
+0x000e5ec5 in ?? ()
+0xe5ec7:	movsbl %dl,%edx
+0x000e5ec7 in ?? ()
+0xe5eca:	jmp    0xe60ea
+0x000e5eca in ?? ()
+0xe60ea:	mov    %ebx,%eax
+0x000e60ea in ?? ()
+0xe60ec:	call   *(%ebx)
+0x000e60ec in ?? ()
+0xe5e50:	mov    %edx,%eax
+0x000e5e50 in ?? ()
+0xe5e52:	mov    $0x402,%edx
+0x000e5e52 in ?? ()
+0xe5e57:	out    %al,(%dx)
+0x000e5e57 in ?? ()
+0xe5e58:	ret    
+0x000e5e58 in ?? ()
+0xe60ee:	inc    %edi
+0x000e60ee in ?? ()
+0xe60ef:	jmp    0xe5eb8
+0x000e60ef in ?? ()
+0xe5eb8:	mov    (%edi),%dl
+0x000e5eb8 in ?? ()
+0xe5eba:	test   %dl,%dl
+0x000e5eba in ?? ()
+0xe5ebc:	je     0xe60f4
+0x000e5ebc in ?? ()
+0xe5ec2:	cmp    $0x25,%dl
+0x000e5ec2 in ?? ()
+0xe5ec5:	je     0xe5ecf
+0x000e5ec5 in ?? ()
+0xe5ec7:	movsbl %dl,%edx
+0x000e5ec7 in ?? ()
+0xe5eca:	jmp    0xe60ea
+0x000e5eca in ?? ()
+0xe60ea:	mov    %ebx,%eax
+0x000e60ea in ?? ()
+0xe60ec:	call   *(%ebx)
+0x000e60ec in ?? ()
+0xe5e50:	mov    %edx,%eax
+0x000e5e50 in ?? ()
+0xe5e52:	mov    $0x402,%edx
+0x000e5e52 in ?? ()
+0xe5e57:	out    %al,(%dx)
+0x000e5e57 in ?? ()
+0xe5e58:	ret    
+0x000e5e58 in ?? ()
+0xe60ee:	inc    %edi
+0x000e60ee in ?? ()
+0xe60ef:	jmp    0xe5eb8
+0x000e60ef in ?? ()
+0xe5eb8:	mov    (%edi),%dl
+0x000e5eb8 in ?? ()
+0xe5eba:	test   %dl,%dl
+0x000e5eba in ?? ()
+0xe5ebc:	je     0xe60f4
+0x000e5ebc in ?? ()
+0xe5ec2:	cmp    $0x25,%dl
+0x000e5ec2 in ?? ()
+0xe5ec5:	je     0xe5ecf
+0x000e5ec5 in ?? ()
+0xe5ec7:	movsbl %dl,%edx
+0x000e5ec7 in ?? ()
+0xe5eca:	jmp    0xe60ea
+0x000e5eca in ?? ()
+0xe60ea:	mov    %ebx,%eax
+0x000e60ea in ?? ()
+0xe60ec:	call   *(%ebx)
+0x000e60ec in ?? ()
+0xe5e50:	mov    %edx,%eax
+0x000e5e50 in ?? ()
+0xe5e52:	mov    $0x402,%edx
+0x000e5e52 in ?? ()
+0xe5e57:	out    %al,(%dx)
+0x000e5e57 in ?? ()
+0xe5e58:	ret    
+0x000e5e58 in ?? ()
+0xe60ee:	inc    %edi
+0x000e60ee in ?? ()
+0xe60ef:	jmp    0xe5eb8
+0x000e60ef in ?? ()
+0xe5eb8:	mov    (%edi),%dl
+0x000e5eb8 in ?? ()
+0xe5eba:	test   %dl,%dl
+0x000e5eba in ?? ()
+0xe5ebc:	je     0xe60f4
+0x000e5ebc in ?? ()
+0xe5ec2:	cmp    $0x25,%dl
+0x000e5ec2 in ?? ()
+0xe5ec5:	je     0xe5ecf
+0x000e5ec5 in ?? ()
+0xe5ec7:	movsbl %dl,%edx
+0x000e5ec7 in ?? ()
+0xe5eca:	jmp    0xe60ea
+0x000e5eca in ?? ()
+0xe60ea:	mov    %ebx,%eax
+0x000e60ea in ?? ()
+0xe60ec:	call   *(%ebx)
+0x000e60ec in ?? ()
+0xe5e50:	mov    %edx,%eax
+0x000e5e50 in ?? ()
+0xe5e52:	mov    $0x402,%edx
+0x000e5e52 in ?? ()
+0xe5e57:	out    %al,(%dx)
+0x000e5e57 in ?? ()
+0xe5e58:	ret    
+0x000e5e58 in ?? ()
+0xe60ee:	inc    %edi
+0x000e60ee in ?? ()
+0xe60ef:	jmp    0xe5eb8
+0x000e60ef in ?? ()
+0xe5eb8:	mov    (%edi),%dl
+0x000e5eb8 in ?? ()
+
+
+== Bootstrap ==
+# the processor is simulating an Intel 8088, "real mode"
+# 'Boot' put the processor in a more modern operating mode
+# load the kernel from disk into memory
+# transfer control to kernel
+
+== real mode ==
+- eight 16-bit general-purpose registers
+- processor sends 20 bits of address to memory
+- %cs, %ds, %es, %ss provide the additional bits necessary to generate
+  20-bit memory addresses from 16-bit registers
+- processor automatically adds 16 times the value of one of the segment
+  registers when a program refers to a memory address
+  * %cs - instruction fetch
+  * %ds - data reads and writes
+  * %ss - stack reads and writes
+
+{{{
++------------------+  <- 0xFFFFFFFF (4GB)
+|      32-bit      |
+|  memory mapped   |
+|     devices      |
+|                  |
+/\/\/\/\/\/\/\/\/\/\
+
+/\/\/\/\/\/\/\/\/\/\
+|                  |
+|      Unused      |
+|                  |
++------------------+  <- depends on amount of RAM
+|                  |
+|                  |
+| Extended Memory  |
+|                  |
+|                  |
++------------------+  <- 0x00100000 (1MB)
+|     BIOS ROM     |
++------------------+  <- 0x000F0000 (960KB)
+|  16-bit devices, |
+|  expansion ROMs  |
++------------------+  <- 0x000C0000 (768KB)
+|   VGA Display    |
++------------------+  <- 0x000A0000 (640KB)
+|                  |
+|    Low Memory    |
+|                  |
++------------------+  <- 0x00000000
+}}}

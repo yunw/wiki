@@ -1,0 +1,3 @@
+可以先看下[[http://blah.blogsome.com/2007/06/27/vim_line_no/ |这篇文章]]
+
+当然最简单的方法还是 *:%!cat -n*

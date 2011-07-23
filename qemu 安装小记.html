@@ -1,0 +1,34 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>qemu 安装小记</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<p>
+在自己的lfs上安装qemu遇到两个小问题.
+</p>
+
+<p>
+1. qemu/hw/event_notifier.c中遇到EFD_NONBLOCK 和 EFD_CLOEXEC 两个符号未定义
+在其头部加上下面两句:
+</p>
+
+<p>
+#define EFD_NONBLOCK 	O_NONBLOCK
+#define EFD_CLOEXEC 	O_CLOEXEC
+</p>
+
+<p>
+2. 链接时找不到符号
+<del>undefine reference __sync_fetch_and_and_4</del>
+</p>
+
+<p>
+使用如下编译选项, <strong>当然重点是后面的"--extra-cflags=-march=i686"</strong>
+./configure --prefix=/usr --target-list=i386-softmmu --extra-cflags=-march=i686
+</p>
+
+</body>
+</html>
