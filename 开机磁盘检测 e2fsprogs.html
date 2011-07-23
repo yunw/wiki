@@ -1,0 +1,30 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>开机磁盘检测 e2fsprogs</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<p>
+Linux 分区挂载超过一定次数之后, 就会自动执行磁盘检测. 在开机时要挂载磁盘, 因
+而很多时候的磁盘检测就发生在开机时. 可以通过工具来调整这里的 <strong>次数</strong>
+</p>
+
+<p>
+在google时就搜到 <a href="http://e2fsprogs.sourceforge.net/">| e2fsprogs</a> 工具集, 其中
+有一个工具 tune2fs 就可以做这个工作. 编译这个工具集后, 工具都装到了 sbin 下, 
+需要超级用户才能使用.
+</p>
+
+<p>
+sudo tune2fs -c <em>N</em> /dev/xxx 设置挂载超N次检测磁盘
+sudo tune2fs -c 0 /dev/xxx 禁止挂载超次检测
+</p>
+
+<p>
+sudo tune2fs -i 5w /dev/xxx 5周检查一次
+</p>
+
+</body>
+</html>

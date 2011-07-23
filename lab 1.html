@@ -1,0 +1,137 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>lab 1</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<pre>
+ 1	#include &lt;inc/mmu.h&gt;
+ 2	
+ 3	# Start the CPU: switch to 32-bit protected mode, jump into C.
+ 4	# The BIOS loads this code from the first sector of the hard disk into
+ 5	# memory at physical address 0x7c00 and starts executing in real mode
+ 6	# with %cs=0 %ip=7c00.
+ 7	
+ 8	.set PROT_MODE_CSEG, 0x8         # kernel code segment selector
+ 9	.set PROT_MODE_DSEG, 0x10        # kernel data segment selector
+10	.set CR0_PE_ON,      0x1         # protected mode enable flag
+11	
+12	.globl start
+13	start:
+14	  .code16                     # Assemble for 16-bit mode
+15	  cli                         # Disable interrupts
+16	  cld                         # String operations increment
+	# cli 清除 EFLAGS 中的IF位, 屏幕INTR中断
+	# cld 清除方向
+17	
+18	  # Set up the important data segment registers (DS, ES, SS).
+19	  xorw    %ax,%ax             # Segment number zero
+20	  movw    %ax,%ds             # -&gt; Data Segment
+21	  movw    %ax,%es             # -&gt; Extra Segment
+22	  movw    %ax,%ss             # -&gt; Stack Segment
+	# 当前cpu处于实模式下, 通用寄存器为16位, 但处理器提供20位的地址总线来
+	# 访问内存, 此时通过段寄存器来实现20位的寻址: 取指令使用%cs, 取数据用
+	# %ds, 栈读写使用%ss, 程序操作的是'虚拟地址', 经处理器然后发送到内存
+	# 上的是'物理地址'. 
+	# 上面将%ds, %es, %ss都清零, 使得后面读写数据时寻址正确
+23	
+24	  # Enable A20:
+25	  #   For backwards compatibility with the earliest PCs, physical
+26	  #   address line 20 is tied low, so that addresses higher than
+27	  #   1MB wrap around to zero by default.  This code undoes this.
+28	seta20.1:
+29	  inb     $0x64,%al               # Wait for not busy
+30	  testb   $0x2,%al
+31	  jnz     seta20.1
+32	
+33	  movb    $0xd1,%al               # 0xd1 -&gt; port 0x64
+34	  outb    %al,$0x64
+35	
+36	seta20.2:
+37	  inb     $0x64,%al               # Wait for not busy
+38	  testb   $0x2,%al
+39	  jnz     seta20.2
+40	
+41	  movb    $0xdf,%al               # 0xdf -&gt; port 0x60
+42	  outb    %al,$0x60
+	# segment:offset 能产生21位的物理地址. 早期的处理器(如intel 8088)只提
+	# 供20位内存地址, 所以21位的物理地址最高位会自动被丢弃. 现代的处理器
+	# 都有大于20位的物理地址, 为了兼容, 键盘控制器输出端口第2位用于设置第
+	# 21位地址是否有效.
+	# 上面的代码设置其有效.
+43	
+44	  # Switch from real to protected mode, using a bootstrap GDT
+45	  # and segment translation that makes virtual addresses 
+46	  # identical to their physical addresses, so that the 
+47	  # effective memory map does not change during the switch.
+48	  lgdt    gdtdesc
+49	  movl    %cr0, %eax
+50	  orl     $CR0_PE_ON, %eax
+51	  movl    %eax, %cr0
+	# 上面的代码开启保护模式: 
+	# 	1. 给gdtr寄存器赋值 
+	# 	2. 置cr0的pe位, 开启分段机制
+52	  
+53	  # Jump to next instruction, but in 32-bit code segment.
+54	  # Switches processor into 32-bit mode.
+55	  ljmp    $PROT_MODE_CSEG, $protcseg
+	# 长跳转指令ljmp会重新加载cs寄存器, 这条指令将cs赋值为0x8, 由于开启了
+	# 分段机制, 处理器会根据%cs的值从全局描述符表中找到对应描述符, 根据
+	# 描述符中的基地址, 再加上给定的偏移地址最终确定要执行的指令. 
+</pre>
+<ul>
+<li>
+<strong>疑问</strong>: <em>此时%cs为0, ljmp 这一句不按分段机制来寻址其指令么?</em>
+<br />	 <code>Enabling protected mode does not immediately change how the processor translates virtual to physical addresses or whether it is in 32-bit mode; it is only when one loads a new value into a segment register that the processor reads the GDT and changes its internal segmentation settings.  Thus the processor continues to execute in 16-bit mode with the same segment translations as before.</code>
+</li>
+</ul>
+
+<pre>
+56	
+57	  .code32                     # Assemble for 32-bit mode
+58	protcseg:
+59	  # Set up the protected-mode data segment registers
+60	  movw    $PROT_MODE_DSEG, %ax    # Our data segment selector
+61	  movw    %ax, %ds                # -&gt; DS: Data Segment
+62	  movw    %ax, %es                # -&gt; ES: Extra Segment
+63	  movw    %ax, %fs                # -&gt; FS
+64	  movw    %ax, %gs                # -&gt; GS
+65	  movw    %ax, %ss                # -&gt; SS: Stack Segment
+	# 上面便进入了32位的(段)保护模式下工作. 由于分段机制, 指令和数据的寻
+	# 址方式都发生了改变. 所以要重新设置%ds, %ss等段寄存器
+66	  
+67	  # Set up the stack pointer and call into C.
+68	  movl    $start, %esp
+69	  call bootmain
+	# 设置堆栈, 跳入C代码中
+	# 堆栈是向下扩展的, 设置esp为$start(0x7c00)位置, 即0x7c00~0x0000都可
+	# 作为堆栈使用
+70	
+71	  # If bootmain returns (it shouldn't), loop.
+72	spin:
+73	  jmp spin
+74	
+75	# Bootstrap GDT
+76	.p2align 2                                # force 4 byte alignment
+77	gdt:
+78	  SEG_NULL				# null seg
+79	  SEG(STA_X|STA_R, 0x0, 0xffffffff)	# code seg
+80	  SEG(STA_W, 0x0, 0xffffffff)	        # data seg
+81	
+82	gdtdesc:
+83	  .word   0x17                            # sizeof(gdt) - 1
+84	  .long   gdt                             # address gdt
+85	
+	# 给'全局描述符表寄存器gdtr'赋的值. 0x17是表长度, 即 gdtdesc - gdt - 1
+	# 最后的减1, 是因为表长度是从0开始算的. 即表长度为0表示实际长度1字节
+	# gdt是全局描述符表的首地址. 把它们加载进 gdtr 寄存器后, 寄存器的值就
+	# 变为:
+	# 	 47                16 15           0
+	# 	+--------------------+--------------+
+	# 	|  基地址(gdt)       | 表长度(0x17) |
+	# 	+--------------------+--------------+
+</pre>
+
+</body>
+</html>
