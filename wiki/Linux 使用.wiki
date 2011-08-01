@@ -1,7 +1,4 @@
 
 - [[开机磁盘检测 e2fsprogs]] 
-<<<<<<< HEAD
 - [[debin-reference 笔记]]
 - [[debian 修改 PATH]]
-=======
->>>>>>> 96264109b97dc0adc8d11a184bcc0797bcc252a5
