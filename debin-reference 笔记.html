@@ -1,0 +1,124 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>debin-reference 笔记</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+
+<h2 id="toc_0.1">控制台特殊组合键</h2>
+
+<ul>
+<li>
+Ctrl-U: 擦除一行光标前面的部分。
+</li>
+<li>
+Ctrl-H: 擦除光标前面的一个字符。
+</li>
+<li>
+Ctrl-D: 终止输入。(退出 shell，如果您正在使用 shell 的话)。
+</li>
+<li>
+Ctrl-C: 终止当前正在运行的程序。
+</li>
+<li>
+Ctrl-Z: 暂停程序。
+</li>
+<li>
+Ctrl-S: 停止向屏幕输出。
+</li>
+<li>
+Ctrl-Q: 重新激活向屏幕输出。
+</li>
+</ul>
+
+<p>
+默认的 shell，bash， 有历史编辑和 tab 补齐功能。
+</p>
+
+<ul>
+<li>
+up-arrow: 开始历史命令搜索。
+</li>
+<li>
+Ctrl-R: 开始增量历史命令搜索。
+</li>
+<li>
+TAB: 完整的把文件名输入到命令行。
+</li>
+<li>
+Ctrl-V TAB: 输入 TAB 而不是扩展命令行。
+</li>
+</ul>
+
+<p>
+其他一些需要记住的按键组合。
+</p>
+<ul>
+<li>
+Ctrl-Alt-Del:挂起或者重新启动系统 初始化安装完成后再安装其他软件包
+</li>
+<li>
+Left-click-and-drag mouse: 选择并且拷贝到剪贴板。
+</li>
+<li>
+Click middle mouse button: 使用剪贴板的内容粘贴。
+</li>
+<li>
+Meta-key (Emacs terminology) 传统的是使用 Left-Alt-key. 
+</li>
+</ul>
+ 
+<h2 id="toc_0.2">Shell 通配符</h2>
+
+<ul>
+<li>
+*
+<br />  匹配0个或多个字符
+<br />  它不会匹配以"."开头的文件名
+</li>
+</ul>
+
+<ul>
+<li>
+?
+<br />  仅匹配一个字符
+</li>
+</ul>
+
+<ul>
+<li>
+[...]
+<br />  匹配[]里面的某个字符
+<br />  [a-z], 匹配a到z之间的某个字符
+</li>
+</ul>
+
+<ul>
+<li><input type="checkbox" />
+
+<br />  匹配任意不包含在[]里面的字符(不包括字符"^")
+</li>
+</ul>
+  
+<h2 id="toc_0.3">硬链接</h2>
+
+<ul>
+<li>
+ . 链接到它所属的目录，因此任何新目录的链接数都从 2 开始计算。
+<br />   .. 链接到父目录，因些目录链接数会随新的子目录数的增长而增长。
+</li>
+</ul>
+ 
+<h2 id="toc_0.4">管道</h2>
+
+<ul>
+<li>
+如果写东西到一个命名管道，在写的东西在管道被读出之前，写的进程不会中止。
+<br />  如果从一个命名管道读，读的进程在中止之前，一直处于等待状态，直到有东西可读。
+<br />  它不存储数据，仅仅连接两个进程。
+</li>
+</ul>
+
+</body>
+</html>
