@@ -1,42 +1,35 @@
 
-[http://blog.chinaunix.net/space.php?uid=20543672&do=blog&id=94365 | 参考这篇文章]
+ [[http://blog.chinaunix.net/space.php?uid=20543672&do=blog&id=94365 | 参考这篇文章]]
 
-# install libusb-dev
-
+* install libusb-dev
   sudo apt-get install libusb-dev
 
-# install [http://www.intra2net.com%2Fen%2Fdeveloper%2Flibftdi%2Fdownload.php|libftdi]
-  
+* install [[http://www.intra2net.com%2Fen%2Fdeveloper%2Flibftdi%2Fdownload.php | libftdi]]
   ./configure && make && sudo make install
   
-# install openocd
-  
-  - [http://developer.berlios.de%2Fprojects%2Fopenocd | download]
+* install openocd
+  - [[http://developer.berlios.de%2Fprojects%2Fopenocd | Download]]
   - compile
     ./configure --enable-maintainer-mode  --enable-ft2232_libftdi
     make
     sudo make install
     
-# configure openocd
-
+* configure openocd
   [[openocd.cfg]]
   
-# sudo openocd -f openocd.cfg
-
+* sudo openocd -f openocd.cfg
   There is a barebox in nand of my board, and it will boot into a command line
   right now.
 
-# telnet localhost 4444
+* telnet localhost 4444
 
-# load zImage to SRAM
-
+* load zImage to SRAM
 {{{
 	halt
 	load_image zImage 0x30400000
 	resume 
 }}}
 
-# boot linux in barebox 
-  
+* boot linux in barebox 
   - addpart /dev/mem 2M@0x30400000(kernel) 
   - bootz /dev/mem.kernel

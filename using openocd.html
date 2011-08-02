@@ -7,38 +7,30 @@
 <body>
 
 <p>
-<a href="http://blog.chinaunix.net/space.php?uid=20543672&amp;do=blog&amp;id=94365">| 参考这篇文章</a>
+ <a href="http_//blog.chinaunix.net/space.php_uid=20543672&amp;do=blog&amp;id=94365 .html"> 参考这篇文章</a>
 </p>
 
-<ol>
+<ul>
 <li>
 install libusb-dev
+<br />  sudo apt-get install libusb-dev
 </li>
-</ol>
+</ul>
 
-<p>
-  sudo apt-get install libusb-dev
-</p>
-
-<ol>
+<ul>
 <li>
-install <a href="http://www.intra2net.com%2Fen%2Fdeveloper%2Flibftdi%2Fdownload.php|libftdi">http://www.intra2net.com%2Fen%2Fdeveloper%2Flibftdi%2Fdownload.php|libftdi</a>
+install <a href="http_//www.intra2net.com%2Fen%2Fdeveloper%2Flibftdi%2Fdownload.php .html"> libftdi</a>
+<br />  ./configure &amp;&amp; make &amp;&amp; sudo make install
 </li>
-</ol>
-  
-<p>
-  ./configure &amp;&amp; make &amp;&amp; sudo make install
-</p>
-  
-<ol>
-<li>
-install openocd
-</li>
-</ol>
+</ul>
   
 <ul>
 <li>
-<a href="http://developer.berlios.de%2Fprojects%2Fopenocd">| download</a>
+install openocd
+</li>
+<ul>
+<li>
+<a href="http_//developer.berlios.de%2Fprojects%2Fopenocd .html"> Download</a>
 </li>
 <li>
 compile
@@ -47,52 +39,44 @@ compile
 <br />    sudo make install
 </li>
 </ul>
+</ul>
     
-<ol>
+<ul>
 <li>
 configure openocd
+<br />  <a href="openocd.cfg.html">openocd.cfg</a>
 </li>
-</ol>
-
-<p>
-  <a href="openocd.cfg.html">openocd.cfg</a>
-</p>
+</ul>
   
-<ol>
+<ul>
 <li>
 sudo openocd -f openocd.cfg
+<br />  There is a barebox in nand of my board, and it will boot into a command line
+<br />  right now.
 </li>
-</ol>
+</ul>
 
-<p>
-  There is a barebox in nand of my board, and it will boot into a command line
-  right now.
-</p>
-
-<ol>
+<ul>
 <li>
 telnet localhost 4444
 </li>
-</ol>
+</ul>
 
-<ol>
+<ul>
 <li>
 load zImage to SRAM
-</li>
-</ol>
-
 <pre>
 	halt
 	load_image zImage 0x30400000
 	resume 
 </pre>
+</li>
+</ul>
 
-<ol>
+<ul>
 <li>
 boot linux in barebox 
 </li>
-</ol>
-  
 <ul>
 <li>
 addpart /dev/mem 2M@0x30400000(kernel) 
@@ -100,6 +84,7 @@ addpart /dev/mem 2M@0x30400000(kernel)
 <li>
 bootz /dev/mem.kernel
 </li>
+</ul>
 </ul>
 
 </body>
