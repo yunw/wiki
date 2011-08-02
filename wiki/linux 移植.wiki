@@ -1,0 +1,4 @@
+
+Boot options  ---> 
+      (0x30008000) Compressed ROM boot loader base address  
+      (noinitrd console=ttySAC0,115200) Default kernel command string  

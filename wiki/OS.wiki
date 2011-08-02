@@ -2,3 +2,7 @@
 - [[6.828]]
 - [[staba调试信息]]
 - [[qemu 安装小记]]
+
+- [[using openocd]]
+
+- [[linux 移植]]

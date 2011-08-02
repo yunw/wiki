@@ -1,0 +1,106 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>using openocd</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<p>
+<a href="http://blog.chinaunix.net/space.php?uid=20543672&amp;do=blog&amp;id=94365">| 参考这篇文章</a>
+</p>
+
+<ol>
+<li>
+install libusb-dev
+</li>
+</ol>
+
+<p>
+  sudo apt-get install libusb-dev
+</p>
+
+<ol>
+<li>
+install <a href="http://www.intra2net.com%2Fen%2Fdeveloper%2Flibftdi%2Fdownload.php|libftdi">http://www.intra2net.com%2Fen%2Fdeveloper%2Flibftdi%2Fdownload.php|libftdi</a>
+</li>
+</ol>
+  
+<p>
+  ./configure &amp;&amp; make &amp;&amp; sudo make install
+</p>
+  
+<ol>
+<li>
+install openocd
+</li>
+</ol>
+  
+<ul>
+<li>
+<a href="http://developer.berlios.de%2Fprojects%2Fopenocd">| download</a>
+</li>
+<li>
+compile
+<br />    ./configure --enable-maintainer-mode  --enable-ft2232_libftdi
+<br />    make
+<br />    sudo make install
+</li>
+</ul>
+    
+<ol>
+<li>
+configure openocd
+</li>
+</ol>
+
+<p>
+  <a href="openocd.cfg.html">openocd.cfg</a>
+</p>
+  
+<ol>
+<li>
+sudo openocd -f openocd.cfg
+</li>
+</ol>
+
+<p>
+  There is a barebox in nand of my board, and it will boot into a command line
+  right now.
+</p>
+
+<ol>
+<li>
+telnet localhost 4444
+</li>
+</ol>
+
+<ol>
+<li>
+load zImage to SRAM
+</li>
+</ol>
+
+<pre>
+	halt
+	load_image zImage 0x30400000
+	resume 
+</pre>
+
+<ol>
+<li>
+boot linux in barebox 
+</li>
+</ol>
+  
+<ul>
+<li>
+addpart /dev/mem 2M@0x30400000(kernel) 
+</li>
+<li>
+bootz /dev/mem.kernel
+</li>
+</ul>
+
+</body>
+</html>
