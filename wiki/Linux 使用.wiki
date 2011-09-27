@@ -2,3 +2,4 @@
 - [[开机磁盘检测 e2fsprogs]] 
 - [[debin-reference 笔记]]
 - [[debian 修改 PATH]]
+- [[Debian 网络配置]]

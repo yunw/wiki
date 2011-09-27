@@ -1,0 +1,9 @@
+
+可以ping通外网ip地址，但访问不了网而。肯定是DNS的问题。
+
+但修改 /etc/resolv.conf 文件一直不行。
+
+最后安装了resolvconf，然后重启网络，可以访问网页了
+
+sudo apt-get install resolvconf
+sudo service networking restart
