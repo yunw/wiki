@@ -1,0 +1,22 @@
+
+== tftp ==
+
+1. 参考 [[Debian tftp配置]] 和 [[fedora13安装配置tftp]] 将PC端的tftp环境搭好
+
+2. 设置u-boot中的环境变量
+
+{{{
+setenv ipaddr 192.168.40.111
+setenv serverip 192.168.40.111
+setenv ethaddr 00:04:9f:00:ea:d3
+setenv fec_addr 00:04:9f:00:ea:d3
+setenv loadaddr <kernel load addr>  //[0x90800000 for i.MX51, 0x70800000 for i.MX50/3]       
+setenv bootfile uImage
+}}}
+
+3. u-boot tftp相关命令
+
+tftp 0x70800000 uImage //从tftp上将uImage文件down到DDR中，uImage是PC端的tftpboot目录中的文件
+tftpboot uImage
+
+== boot bootm ==

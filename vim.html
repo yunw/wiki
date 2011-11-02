@@ -11,5 +11,59 @@
 </li>
 </ul>
 
+<h2 id="toc_0.1">自动补全文件名</h2>
+<p>
+在写代码时,总会用到类似下面的代码:
+</p>
+<pre>
+#include "../../xxx.h"
+</pre>
+
+<p>
+但问题是,代码层级及.h文件的文件名要仔细输入才能保证不出错.用vim的智能补全就能
+解决这个问题.用 CTRL-X CTRL-F 即可补全文件名. 详情请阅读:
+</p>
+
+<pre>
+:help ins-completion
+</pre>
+
+<h2 id="toc_0.2">十六进制查看</h2>
+<p>
+:%!xxd
+:%!xxd -r
+</p>
+
+<p>
+:%!xxd -g1
+</p>
+
+<h2 id="toc_0.3">增加行号</h2>
+
+<p>
+<a href="http://blog.chinaunix.net/space.php?uid=196078&amp;do=blog&amp;id=2789826">http://blog.chinaunix.net/space.php?uid=196078&amp;do=blog&amp;id=2789826</a>
+</p>
+
+<p>
+总结一下,经常使用的增加行号的方法:
+1. 调用外面的程序
+</p>
+<blockquote>
+A) :%!cat -n
+B) :%!nl
+C) :%!awk '{print NR,$0}'
+</blockquote>
+<p>
+2. 利用VIM自身来增加行号
+</p>
+<blockquote>
+A) :g@<sup><small>@exec "s@</small></sup>@".strpart(line(".")."     ", 0, 4)
+B) 利用宏 (这个看起来比较复杂一些)
+1)^VGI             ----&gt; 将文本右移6个空格
+2)i1&lt;Esc&gt;          ----&gt; 在第一行行首输入1
+3)gay3lj0P0^A0     ----&gt; 录制宏
+4)300@a            ----&gt; 添加1到300行行号(当然也可以是350行,400行....)
+</blockquote>
+
 </body>
 </html>

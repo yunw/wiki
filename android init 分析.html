@@ -1,0 +1,39 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>android init 分析</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+<blockquote>
+action_for_each_trigger("early-init", action_add_queue_tail);
+drain_action_queue();
+</blockquote>
+    
+<p>
+将标有"early-init"的 action 添加到 action_queue 中，然后执行action_queue中的所有 action
+</p>
+
+<p>
+这一步就是执行所有 early_init 的动作 
+</p>
+
+<p>
+继续往下就有几组类似的操作
+</p>
+<blockquote>
+action_for_each_trigger("init", action_add_queue_tail);
+drain_action_queue();
+</blockquote>
+<blockquote>
+action_for_each_trigger("early-boot", action_add_queue_tail);
+action_for_each_trigger("boot", action_add_queue_tail);
+drain_action_queue();
+</blockquote>
+<blockquote>
+queue_all_property_triggers();
+drain_action_queue();
+</blockquote>
+
+</body>
+</html>

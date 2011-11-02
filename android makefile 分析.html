@@ -1,0 +1,125 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>android makefile 分析</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+
+<p>
+target/product/generic.mk
+</p>
+
+<p>
+PRODUCT_DEVICE
+</p>
+
+<h2 id="toc_0.1">core/product_config.mk</h2>
+
+<p>
+TARGET_DEVICE := generic
+</p>
+
+<h2 id="toc_0.2">core/definitions.mk</h2>
+
+<p>
+ifeq ($(strip $(SHOW_COMMANDS)),)
+define pretty
+@echo $1
+endef
+hide := @
+else
+define pretty
+endef
+hide :=
+endif
+</p>
+
+<h2 id="toc_0.3">core/envsetup.mk</h2>
+
+<p>
+HOST_BUILD_TYPE := release
+</p>
+
+<p>
+OUT_DIR := $(TOPDIR)out
+HOST_OUT_ROOT_release := $(OUT_DIR)/host
+</p>
+	
+<p>
+HOST_OS := linux
+HOST_ARCH := x86
+</p>
+	
+<p>
+HOST_OUT_release := $(HOST_OUT_ROOT_release)/$(HOST_OS)-$(HOST_ARCH)
+</p>
+
+<p>
+HOST_OUT := $(HOST_OUT_$(HOST_BUILD_TYPE))
+</p>
+
+<p>
+~~~~~~~~~~~~~~~
+综上，得到
+HOST_OUT := ./out/host/linux-x86
+HOST_OUT_EXECUTABLES := ./out/host/linux-x86/bin
+HOST_OUT_SHARED_LIBRARIES:= ./out/host/linux-x86/lib
+HOST_OUT_JAVA_LIBRARIES:= ./out/host/linux-x86/framework
+HOST_OUT_SDK_ADDON := ./out/host/linux-x86/sdk_addon
+HOST_COMMON_OUT_ROOT := ./out/host/common
+</p>
+
+<p>
+所以 config.mk 中的一系列工具的路径也就找到了 
+</p>
+
+<p>
+~~~~~~~~~~~~~~~
+</p>
+
+<p>
+TARGET_OUT_ROOT := ./out/target
+TARGET_COMMON_OUT_ROOT = ./out/target/common
+</p>
+
+<p>
+PRODUCT_OUT := $(TARGET_PRODUCT_OUT_ROOT)/$(TARGET_DEVICE)
+</p>
+<blockquote>
+:= ./out/target/product/generic
+</blockquote>
+            
+<p>
+~~~~~~~~~~~~~~~
+</p>
+
+<p>
+ifeq ($(TARGET_PRODUCT),)
+ifeq ($(TARGET_SIMULATOR),true)
+TARGET_PRODUCT := sim
+else
+TARGET_PRODUCT := generic
+endif
+endif
+</p>
+
+<p>
+<strong>默认是generic</strong>
+</p>
+
+<h2 id="toc_0.4">ramdisk.img 生成过程</h2>
+
+<p>
+INSTALLED_RAMDISK_TARGET := $(BUILT_RAMDISK_TARGET)
+:= $(PRODUCT_OUT)/ramdisk.img
+:= ./out/target/product/generic/ramdisk.img
+</p>
+
+<p>
+out/host/linux-x86/bin/mkbootfs out/target/product/generic/root | out/host/linux-x86/bin/minigzip &gt; out/target/product/generic/ramdisk.img
+out/host/linux-x86/bin/mkyaffs2image -f out/target/product/generic/data out/target/product/generic/userdata.img
+</p>
+
+</body>
+</html>

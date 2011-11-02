@@ -1,0 +1,14 @@
+
+Git has two modes of how it treats line endings:
+
+$ git config core.autocrlf
+# that command will print either "true" or "false"
+You can set the mode to use by adding an additional parameter of true or false to the above command line.
+
+If core.autocrlf is set to true, that means that any time you add a file to the git repo that git thinks is a text file, it will turn all CRLF line endings to just LF before it stores it in the commit. Whenever you git checkout something, all text files automatically will have their LF line endings converted to CRLF endings. This allows development of a project across platforms that use different line-ending styles without commits being very noisy because each editor changes the line ending style as the line ending style is always consistently LF.
+
+The side-effect of this convenient conversion, and this is what the warning you're seeing is about, is that if a text file you authored originally had LF endings instead of CRLF, it will be stored with LF as usual, but when checked out later it will have CRLF endings. For normal text files this is usually just fine. The warning is a "for your information" in this case, but in case git incorrectly assesses a binary file to be a text file, it is an important warning because git would then be corrupting your binary file.
+
+If core.autocrlf is set to false, no line-ending conversion is ever performed, so text files are checked in as-is. This usually works ok, as long as all your developers are either on Linux or all on Windows. But in my experience I still tend to get text files with mixed line endings that end up causing problems.
+
+My personal preference is to leave the setting turned ON, as a Windows developer.

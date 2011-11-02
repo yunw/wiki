@@ -1,0 +1,12 @@
+
+- [[u-boot扎记]]
+- [[android makefile 分析]]
+- [[android kernel移植]]
+- [[adroid bootup log]]
+
+- [[android init 分析]]
+- 
+- [[android 目录结构]]
+
+
+- [[android event system]]

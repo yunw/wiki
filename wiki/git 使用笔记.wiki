@@ -1,0 +1,139 @@
+
+= git config =
+{{{
+$ git config --[system|global] user.name "John Doe"
+$ git config --[system|global] user.email johndoe@example.com
+  }}}
+- system : /etc/gitconfig
+- global : ~/.gitconfig
+- 不加参数时 : 当前git项目根目录/.git/config
+git 的查找顺序为 /etc/gitconfig -> ~/.gitconfig -> 当前git项目.git/config
+若同时在多个文件中找到,以最后找到的值为准.
+
+== name && email ==
+{{{
+$ git config --[system|global] user.name "John Doe"
+$ git config --[system|global] user.email johndoe@example.com
+  }}}
+  
+== editor ==
+默认编辑器(下面设置默认编辑器为vim)
+`git config --[system|global] core.editor vim`
+
+== commit.template ==
+提交模板, 每次提交时都会使用它
+`git config --[system|global] commit.template $HOME/.gitmessage.txt`
+
+== color ==
+打开自动着色
+`git config --[system|global] color.ui true`
+
+== diff && merge ==
+`git config --[system|global] mergetool vimdiff`
+{{{
+merge.tool通知 Git 使用哪个合并工具
+$ git config --global merge.tool extMerge
+
+mergetool.*.cmd规定命令运行的方式
+$ git config --global mergetool.extMerge.cmd 'extMerge "$BASE" "$LOCAL" "$REMOTE" "$MERGED"'
+
+mergetool.trustExitCode会通知 Git 程序的退出是否指示合并操作成功
+$ git config --global mergetool.trustExitCode false
+
+diff.external通知 Git 用什么命令做比较
+$ git config --global diff.external extDiff
+  }}}
+  
+== alias ==
+{{{
+$ git config --[system|global] alias.co checkout
+$ git config --[system|global] alias.br branch
+$ git config --[system|global] alias.ci commit
+$ git config --[system|global] alias.st status
+  }}}
+  
+= auto complete=
+{{{
+如果你用的是 Bash shell，可以试试看 Git 提供的自动完成脚本。下载 Git 的源代码，进入 contrib/completion 目录，会看到一个 git-completion.bash 文件。将此文件复制到你自己的用户主目录中（译注：按照下面的示例，还应改名加上点：cp git-completion.bash ~/.git-completion.bash），并把下面一行内容添加到你的 .bashrc 文件中：
+
+source ~/.git-completion.bash
+  }}}
+  
+  
+= 取得git仓库的两种方式 =
+# 现存项目使用git管理
+  - git init
+  - git add . (加入一些文件)
+  - git commit -m 'initial project version'
+# 从已有的git仓库镜像
+  - git clone url_of_git my_project_name
+ 
+
+- git diff 			# 工作目录中当前文件和暂存区域快照之间的差异
+- git diff --cached 		# 已经暂存起来的文件和上次提交时的快照之间的差异
+ 
+- git commit 			# 将暂存起来的内容提交,打开默认编辑器,然后输入提交说明
+- git commit -m '提交说明' 	# 跟提交说明
+- git commit -a 		# 跳过暂存区,将所有已跟踪文件修改都暂存起来,一起提交
+ 
+- git rm --cached		# 从git跟踪清单中删除,但还保留在原来的位置上
+
+= git log =
+* -p 			# 按补丁格式显示每个更新之间的差异。
+* --stat 		# 显示每次更新的文件修改统计信息。
+* --shortstat 		# 只显示 --stat 中最后的行数修改添加移除统计。
+* --name-only 		# 仅在提交信息后显示已修改的文件清单。
+* --name-status 	# 显示新增、修改、删除的文件清单。
+* --abbrev-commit 	# 仅显示 SHA-1 的前几个字符，而非所有的 40 个字符。
+* --relative-date 	# 使用较短的相对时间显示（比如，“2 weeks ago”）。
+* --graph 		# 显示 ASCII 图形表示的分支合并历史。
+* --pretty 		# 使用其他格式显示历史提交信息。可用的选项包括 oneline，short，full，fuller 和 format（后跟指定格式）。
+* -(n)			# 仅显示最近的 n 条提交
+* --since, --after 	# 仅显示指定时间之后的提交。
+* --until, --before 	# 仅显示指定时间之前的提交。
+* --author 		# 仅显示指定作者相关的提交。
+* --committer 		# 仅显示指定提交者相关的提交。
+
+1. 查找2010/12/5之后到现在提交的历史, 可以使用:
+	git log --since="2010-12-5"
+2. 查找2010年11月份1号~30号 的提交, 可以使用:
+	git log --since="2010-11-01" --before="2010-11-30"
+3. 查找2010/11/1~2010/11/30 之间我的提交, 可以使用:
+	git log --since="2010-11-01" --before="2010-11-30" --author=smmei
+4. 查找2010/11/1~2010/11/30 之间我的提交的具体细节(每一次改动), 可以使用:
+	git log --since="2010-11-01" --before="2010-11-30" --author=smmei -p
+ 
+* 重写历史
+ git commit --amend
+
+
+= git remote =
+- git remote -v					# 查看当前远程库及对应地址
+- git remote add [my_name] [git_url] 		# 将远程仓库git_url加到本地并命名为my_name
+- git remote show [remote-name] 		# 查看远程仓库信息
+- git remote rm [remote-name] 			# 删除远程仓库
+- git remote rename [src-name] [dest-name] 	# 远程仓库重命名
+ 
+- git push [remote-name] [branch-name] 		# 把本地的分支推送到服务器上(服务器上也有这个分支,没有则创建这个分支)
+- git fetch [remote-name] 			# 从远程仓库抓取数据到本地
+ 
+= git tag =
+== 含附注的标签 annotations ==
+- git tag -a [v0.23] -m '[some annotations]' 	# 打一个带附注的标签,不加 -m 会启动编辑器
+- git show v0.23 				# 显示0.23版本的信息
+== 签署标签 signed ==
+- git tag -s [v0.23] -m '[some annotations]'
+== 轻量级标签 light ==
+- git tag v0.23 		# 不要 -a/-s, 不要注释
+== 验证标签 verify ==
+- git tag -v [0.23] 
+== 后期再添加标签 ==
+- git tag v0.23 [SHA-1前几位即可]
+== 分享标签 ==
+默认情况下，git push 并不会把标签传送到远端服务器上,只有通过显式命令才能分享标签到远端仓库.
+- git push origin [tagname]
+一次推送所有标签
+- git push origin --tags
+
+
+git clean -df 删除所有未跟踪的文件

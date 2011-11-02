@@ -1,0 +1,231 @@
+http://www.aka.org.cn/Lectures/002/Lecture-2.1.2/bash-syntax.html
+
+== 变量 == 
+
+* Bash中变量, 不能含有保留字, 不能含有"-"等保留字符, 也不能含有空格
+* Bash中变量不需要定义, 直接使用即可. 如果未赋初值, 则其值为空(NULL)
+* 变量赋值时, 等号(=)左右两边不能有空格
+* 除了变量赋值和变量用在FOR循环语句中, BASH使用变量必须在前面加上"$"符号
+
+* 以单引号括起来的变量将不被BASH解释为变量, 如'$STR', 而被看作纯粹的字符串.
+  更为标准的变量引用方式是 ${STR}, 通常省略大括号, 但复杂情况时最好加上大括号
+  
+* BASH变量也没有类型之分, 一个变量即可以被定义为一个字符串, 也可以被再定义为
+  整数. 如果对该变量进行整数运算, 则其被解释为整数; 若对其进行字符串操作, 则
+  解释为字符串
+  
+* 整数变量计算, 有 + - * /. 整数运算一般通过let和expr两个指定来实现.如
+{{{
+  		let "x = $x + 1"
+  也可写作:
+  		x = `expr $x + 1`
+  }}}
+  		
+* 比较操作, 整数变量与字符串变量各不相同:
+
+| 对应的操作 | 整数操作 | 字符串操作 |
+|------------+----------+------------|
+| 相同       | -eq      | =          |
+| 不同       | -ne      | !=         |
+| 大于       | -gt      | >          |
+| 小于       | -lt      | <          |
+| 大于或等于 | -ge      |            |
+| 小于或等于 | -le      |            |
+| 为空       |          | -z         |
+| 不为空     |          | -n         |
+
+比如：
+	比较字符串 a 和 b 是否相等就写作：if [ $a = $b ]
+	判断字符串 a 是否为空就写作： if [ -z $a ]
+	判断整数变量 a 是否大于 b 就写作：if [ $a -gt $b ]
+更细致的文档推荐在字符串比较时尽量不要使用 -n,而用 ! -z 来代替.
+(其中符号"!" 表示求反操作)
+
+* 文件变量. 如 if[-x /root] 用于判断/root目录是否可以被当前用户进入
+ 
+| 运算符          | 含义（ 满足下面要求时返回 TRUE ） |
+|-----------------+-----------------------------------|
+| -e file         | 文件 file 已经存在                |
+| -f file         | 文件 file 是普通文件              |
+| -s file         | 文件 file 大小不为零              |
+| -d file         | 文件 file 是一个目录              |
+| -r file         | 文件 file 对当前用户可以读取      |
+| -w file         | 文件 file 对当前用户可以写入      |
+| -x file         | 文件 file 对当前用户可以执行      |
+| -g file         | 文件 file 的 GID 标志被设置       |
+| -u file         | 文件 file 的 UID 标志被设置       |
+| -O file         | 文件 file 是属于当前用户的        |
+| -G file         | 文件 file 的组 ID 和当前用户相同  |
+| file1 -nt file2 | 文件 file1 比 file2 更新          |
+| file1 -ot file2 | 文件 file1 比 file2 更老          |
+
+* 在BASH中如果一个变量被使用了, 则该变量一直有效. 变量首次被赋初值时加上local
+  关键字就可以声明为一个局部变量.
+
+=== BASH中变量与C语言中变量的区别 ===
+# BASH中的变量在引用时都需要在变量前加上"$"符号
+  (第一次赋值及在For循环的头部不用加"$"符号);
+# BASH中没有浮点运算,因此也就没有浮点类型的变量可用;
+# BASH中的整形变量的比较符号与C语言中完全不同,而且整形变量的算术运算也需要经
+  过let或expr语句来处理;
+  
+
+== BASH中基本流程控制语法 ==
+
+=== if ... then ... else ===
+* 如果将 if then 写在一行里, 必须在then前面加分号. 如if [ expression ]; then 
+* [ expression ] 里中括号与expression之间隔一个空格
+
+{{{
+if [ expression ]
+then
+　　statments
+fi
+  }}}
+或者
+{{{
+if [ expression ]
+then
+　　statments
+else
+　　statments
+fi
+  }}}
+或者
+{{{
+if [ expression ]
+then
+　　statments
+else if [ expression ]
+　　then 
+　　　　statments
+　　else
+　　　　statments 
+fi
+  }}}
+或者
+{{{
+if [ expression ]
+then
+　　statments
+elif [ expression ]
+　　then
+　　　　statments
+　　else
+　　　　statments
+fi
+  }}}
+  
+=== for === 
+
+* 基本结构
+{{{
+	for $var in [list]
+	do
+		statments
+	done
+}}}
+   - $var是循环控制变量
+   - [list]是$var要遍历的一个集合
+   - do/done包含了循环体
+   - 如果do与for写在同一行, 则do前面要加上分号
+{{{
+	for param
+	do
+		echo $param
+	done
+}}}
+param 将取遍命令行所有参数
+
+=== while ===
+{{{
+	while [ condition ]
+	do 
+		statments
+	done
+}}}
+例子:
+{{{
+	day=$1
+	while [ $day -gt 0 ]
+	do
+		echo $day
+		let "day=$day - 1"
+	done
+}}}
+
+=== until ===
+{{{
+	until [ condition is TRUE ]
+	do 
+		statments
+	done
+}}}
+  例子
+{{{
+	day=$1
+	until [ $day -eq 0 ]
+	do
+		echo $day
+		let "day=$day - 1"
+	done
+}}}
+
+=== case ===
+
+{{{
+case "$var" in
+	condition1)
+		statments1;;
+	condition2)
+		statments2;;
+	...
+	*)
+	default statments;;
+esac
+}}}
+例子:
+{{{
+#!/bin/sh
+echo "Hit a key, then hit return."
+read Keypress
+
+case "$Keypress" in 
+	[a-z]) echo "Lowercase letter";;
+	[A-Z]) echo "Uppercase letter";;
+	[0-9]) echo "Digit";;
+	*) echo "Punctuation, whitespace, or other";;
+esac
+
+exit 0
+}}}
+
+== 函数的使用 ==
+
+{{{
+function my_funcname {
+	code block
+}
+}}}
+或者
+{{{
+my_funcname() {
+	code block
+}
+}}}
+例子
+{{{
+#!/bin/bash 
+
+square() { 
+　let "res = $1 * $1" 
+　return $res 
+} 
+
+square $1 
+result=$? 
+echo $result 
+
+exit 0
+}}}
+

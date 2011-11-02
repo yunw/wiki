@@ -1,2 +1,56 @@
 
 - [[开机磁盘检测 e2fsprogs]] 
+ 
+- 打开minicom颜色: minicom -c on
+ 
+== gnome安装软件后, 图标显示不正确 ==
+
+安装iptux之后, 不能立即显示图标
+
+gtk-update-icon-cache $PREFIX/share/icons/hicolor/
+
+$PREFIX 是软件安装路径
+
+- [[grep]]
+- [[find]]
+- [[wget]]
+ 
+- [[fedora13安装配置tftp]]
+- [[Debian tftp配置]]
+- [[Bash提示符]]
+- [[linux-windows双系统，两块硬盘]]
+ 
+- 查看glibc版本号
+
+locate libc.so //找到路径 
+  /lib/libc.so.6
+  
+函数 gnu_get_libc_version(), man一下它
+
+
+
+[[http://www.cnblogs.com/utopiazh/archive/2010/11/25/linux_cmd_editing.html][博客园看来的]]
+
+
+注: 下面的 _*向后*_ 指光标左边; _*向前*_ 指光标右边
+
+- 移动
+  # Ctrl+a : 移动到当前行的开头
+  # Ctrl+e : 移动到当前行的结尾
+  # Ctrl+b : 向后移动一个字符
+  # Ctrl+f : 向前移动一个字符
+  # Alt +b : 向后移动一个单词
+  # Alt +f : 向前移动一个单词
+- 清屏
+  * Ctrl+l
+- 编辑
+  # Ctrl+u : 删除光标所在处之前的所有字符(不包括自身)
+  # Ctrl+k : 删除光标所在处之后的所有字符(包括自身)
+  # Ctrl+d : 删除光标所在处字符
+  # Ctrl+h : 删除光标所在处前一个字符
+  # Ctrl+w : 删除光标所在处之前的字符至其单词头(以空格,标点等为分隔符)
+- 粘贴
+  * Ctrl+y : 粘贴刚才所删除的字符
+- 撤销
+  * Ctrl+(x u) : 按住Ctrl的同时再先后按x和u, 撤销刚才的操作
+

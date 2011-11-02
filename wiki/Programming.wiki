@@ -1,2 +1,14 @@
 
 - [[字符编码知识encoding]]
+- 
+- [[Bash基础知识]]
+- [[Bash 基本语法]]
+- [[BASH 中的特殊保留字]]
+
+- 查内存泄漏
+
+  valgrind --tool=memcheck --leak-check=full
+  
+- 格式化代码
+  * indent -orig -i8 xxx.c   Berkely风格
+  * indent -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4 -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1

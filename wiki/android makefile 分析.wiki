@@ -1,0 +1,75 @@
+
+target/product/generic.mk
+
+PRODUCT_DEVICE
+
+== core/product_config.mk ==
+
+TARGET_DEVICE := generic
+
+== core/definitions.mk ==
+
+ifeq ($(strip $(SHOW_COMMANDS)),)
+define pretty
+@echo $1
+endef
+hide := @
+else
+define pretty
+endef
+hide :=
+endif
+
+== core/envsetup.mk ==
+
+HOST_BUILD_TYPE := release
+
+OUT_DIR := $(TOPDIR)out
+HOST_OUT_ROOT_release := $(OUT_DIR)/host
+	
+HOST_OS := linux
+HOST_ARCH := x86
+	
+HOST_OUT_release := $(HOST_OUT_ROOT_release)/$(HOST_OS)-$(HOST_ARCH)
+
+HOST_OUT := $(HOST_OUT_$(HOST_BUILD_TYPE))
+
+~~~~~~~~~~~~~~~
+综上，得到
+HOST_OUT := ./out/host/linux-x86
+HOST_OUT_EXECUTABLES := ./out/host/linux-x86/bin
+HOST_OUT_SHARED_LIBRARIES:= ./out/host/linux-x86/lib
+HOST_OUT_JAVA_LIBRARIES:= ./out/host/linux-x86/framework
+HOST_OUT_SDK_ADDON := ./out/host/linux-x86/sdk_addon
+HOST_COMMON_OUT_ROOT := ./out/host/common
+
+所以 config.mk 中的一系列工具的路径也就找到了 
+
+~~~~~~~~~~~~~~~
+
+TARGET_OUT_ROOT := ./out/target
+TARGET_COMMON_OUT_ROOT = ./out/target/common
+
+PRODUCT_OUT := $(TARGET_PRODUCT_OUT_ROOT)/$(TARGET_DEVICE)
+ 	    := ./out/target/product/generic
+            
+~~~~~~~~~~~~~~~
+
+ifeq ($(TARGET_PRODUCT),)
+ifeq ($(TARGET_SIMULATOR),true)
+TARGET_PRODUCT := sim
+else
+TARGET_PRODUCT := generic
+endif
+endif
+
+*默认是generic*
+
+== ramdisk.img 生成过程 ==
+
+INSTALLED_RAMDISK_TARGET := $(BUILT_RAMDISK_TARGET)
+:= $(PRODUCT_OUT)/ramdisk.img
+:= ./out/target/product/generic/ramdisk.img
+
+out/host/linux-x86/bin/mkbootfs out/target/product/generic/root | out/host/linux-x86/bin/minigzip > out/target/product/generic/ramdisk.img
+out/host/linux-x86/bin/mkyaffs2image -f out/target/product/generic/data out/target/product/generic/userdata.img

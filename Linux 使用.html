@@ -11,6 +11,149 @@
 <a href="开机磁盘检测 e2fsprogs.html">开机磁盘检测 e2fsprogs</a> 
 </li>
 </ul>
+ 
+<ul>
+<li>
+打开minicom颜色: minicom -c on
+</li>
+</ul>
+ 
+<h2 id="toc_0.1">gnome安装软件后, 图标显示不正确</h2>
+
+<p>
+安装iptux之后, 不能立即显示图标
+</p>
+
+<p>
+gtk-update-icon-cache $PREFIX/share/icons/hicolor/
+</p>
+
+<p>
+$PREFIX 是软件安装路径
+</p>
+
+<ul>
+<li>
+<a href="grep.html">grep</a>
+</li>
+<li>
+<a href="find.html">find</a>
+</li>
+<li>
+<a href="wget.html">wget</a>
+</li>
+</ul>
+ 
+<ul>
+<li>
+<a href="fedora13安装配置tftp.html">fedora13安装配置tftp</a>
+</li>
+<li>
+<a href="Debian tftp配置.html">Debian tftp配置</a>
+</li>
+<li>
+<a href="Bash提示符.html">Bash提示符</a>
+</li>
+<li>
+<a href="linux-windows双系统，两块硬盘.html">linux-windows双系统，两块硬盘</a>
+</li>
+</ul>
+ 
+<ul>
+<li>
+查看glibc版本号
+</li>
+</ul>
+
+<p>
+locate libc.so //找到路径 
+  /lib/libc.so.6
+</p>
+  
+<p>
+函数 gnu_get_libc_version(), man一下它
+</p>
+
+
+
+<p>
+<a href="http://www.cnblogs.com/utopiazh/archive/2010/11/25/linux_cmd_editing.html">博客园看来的</a>
+</p>
+
+
+<p>
+注: 下面的 <em><strong>向后</strong></em> 指光标左边; <em><strong>向前</strong></em> 指光标右边
+</p>
+
+<ul>
+<li>
+移动
+</li>
+<ol>
+<li>
+Ctrl+a : 移动到当前行的开头
+</li>
+<li>
+Ctrl+e : 移动到当前行的结尾
+</li>
+<li>
+Ctrl+b : 向后移动一个字符
+</li>
+<li>
+Ctrl+f : 向前移动一个字符
+</li>
+<li>
+Alt +b : 向后移动一个单词
+</li>
+<li>
+Alt +f : 向前移动一个单词
+</li>
+</ol>
+<li>
+清屏
+</li>
+<ul>
+<li>
+Ctrl+l
+</li>
+</ul>
+<li>
+编辑
+</li>
+<ol>
+<li>
+Ctrl+u : 删除光标所在处之前的所有字符(不包括自身)
+</li>
+<li>
+Ctrl+k : 删除光标所在处之后的所有字符(包括自身)
+</li>
+<li>
+Ctrl+d : 删除光标所在处字符
+</li>
+<li>
+Ctrl+h : 删除光标所在处前一个字符
+</li>
+<li>
+Ctrl+w : 删除光标所在处之前的字符至其单词头(以空格,标点等为分隔符)
+</li>
+</ol>
+<li>
+粘贴
+</li>
+<ul>
+<li>
+Ctrl+y : 粘贴刚才所删除的字符
+</li>
+</ul>
+<li>
+撤销
+</li>
+<ul>
+<li>
+Ctrl+(x u) : 按住Ctrl的同时再先后按x和u, 撤销刚才的操作
+</li>
+</ul>
+</ul>
 
 </body>
 </html>

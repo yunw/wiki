@@ -1,0 +1,147 @@
+= SD-MMC =
+
+== Registers ==
+
+CID  128  卡的识别码：用于识别单个卡的编号。
+RCA  16   卡的相对地址（这个寄存器在 SPI 模式下不可用）
+CSD  128  卡的特性数据：是关于这个卡工作条件的相关信息。
+SCR  64   SD配置寄存器：关于这个SD卡的特殊功能的特性信息。
+OCR  32   工作条件寄存器(电压)
+
+http://hi.baidu.com/narshben/blog/item/cfcb983e52e36c3271cf6cb2.html
+
+== Commands ==
+
+1. CMD0
+
+   reset SD/MMC Card
+
+2. CMD8
+
+   用于取得SD支持工作电压范围
+   CMD8的参数为 (voltage | check_pattern)
+	若支持，SD Card 将参数回送，利用其中的check_pattern可检查是否支持该电压范围
+	响应有效，则说明主控制器支持 Physical Spec Version 2.0
+	
+3. ACMD41
+
+   ACMD41是应用型相关命令，发出时紧跟在一条CMD55之后，CMD55相当于一个命令切换作用
+   ACMD41命令参数的HCS(Host Capacity Support)位若设定为1,表明控制器支持SDHC卡。
+   支持Version2.0的主控制器发送时设置此位。
+
+   如果向SDHC卡发送ACMD41命令的HCS位为0, SDHC返回的响应中Busy标识永远为0, 表示忙状态
+   
+   返回响应的OCR_HCS位如果为1, 表示高容量SD卡(Capacity > 2G)
+                      如果为0, 表示标准SD卡(Capacity <= 2G)
+   
+4. CMD2 - ALL_SEND_CID
+
+   查询各卡的CID(Unique Card Identification).
+   还未发送CID的卡会发送CID值作为响应，发送完CID之后，SD卡进入识别状态(Identification State)
+   
+5. CMD3 - SEND_RELATIVE_ADDR
+
+   要求各个卡发送一个新的相对地址RCA，RCA在之后的数据传输模式中用于寻址。
+   RCA发送完之后，SD卡进入Stand-by状态
+
+   如果控制器想给SD卡分配一个新的RCA，则可以继续发送CMD3给SD卡。
+   
+----------------- Stand-by -------------------
+
+6. CMD9 - SEND_CSD
+
+   用于获得SD卡的CSD(Card Specific Data, 128-bit)寄存器, 其中有SD卡的一些信息，如块长度，容量等
+   
+7. CMD7 - SELECT_CARD
+
+   用来选择某个SD卡，使其进入Transfer状态， 在指定时间内，只有一个SD卡处于Transfer状态.
+   
+   当先前处于Transfer状态的SD卡收到CMD7命令后，会释放与控制器的连接, 并进入Stand-by状态
+
+   CMD7使用保留地址0x0000作为参数时，会使所有卡进入Stand-by状态.
+   
+----------------- Transfer -------------------
+   
+8. ACMD51 - SEND_SCR
+
+   Read the SD Configuration Register(SCR 64-bit).
+   其中包含关于这个SD卡的特殊功能的特性信息
+   
+9. CMD6 - SWITCH_FUNC
+
+   在SD协议1.00和2.00的版本该命令主要用于切换卡进入高速模式.
+   在3.00的协议中，该命令被赋予了更多的功能.
+   
+   CMD6命令共有查询模式和设置模式两种. 查询模式主要用于查询是否支持该功能, 而设置模式主要用于对该功能的设置.
+   我们采取的流程是先查询, 后设置.
+   
+   _*下面的描述与代码里不一样*_
+     第一次发送的命令参数应该为: 0x00, 0xff, 0xff, 0xf1.
+     该命令的作用是查询AccessMode是否支持High-Speed。
+     命令发送完毕，这里需要注意的是，CMD6并不是用命令总线，而是用数据总线来进行应答。
+     在命令发送完毕时, 我们会从数据总线上接收到64Byte的数据.
+     判断第17Byte的低4Bit(data_buf[16] & 0x0f)是否等于1。
+     是则继续, 否则表示不支持高速模式.
+     
+     确认SD卡支持高速模式后, 第二次发送CMD6的参数为: 0x80, 0xff, 0xff, 0xf1.
+     该命令的作用是设置AccessMode为High-Speed.
+     命令发送完毕, 再一次查询接快收数据第17Byte的低4Bit (data_buf[16]&0x0f) 是否等于1.
+     如果是, 则表明切换成功, 接下来就可以调整SD主机模块的时钟和边沿控制了.
+     
+10. ACMD6 - SET_BUS_WIDTH
+
+   Wide Bus(4-bit bus width) operation mode may be selected/deselcted using ACM6
+   Default bus width after power-up or GO_IDLE(CMD0) is 1-bit bus width.
+
+   In order to change the bus width, tow conditions shall be met:
+   a, The card is in 'Transfer-State'
+   b, The card is not locked
+   
+11. CMD16 - SET_BLOCKLEN
+
+   设置块长度
+   
+   We can setup the blocklength only one time for all accesses to the media.
+   
+   To make 2GByte card, the Maximum Block Length (READ_BL_LEN=WRITE_BL_LEN) shall be set to 1024 bytes. 
+   However, the Block Length, set by CMD16, shall be up to 512 bytes to keep consistency
+   with 512 bytes Maximum Block Length cards (Less than and equal 2GByte cards).
+
+所有的数据读命令都可以被停止命令（CMD12）在任意时刻终止。
+数据传输会终止，SD卡返回Transfer状态。
+读命令有：块读操作（CMD17）、多块读操作（CMD18）、发送写保护（CMD30）、发送scr（ACMD51）以及读模式下的普通命令（CMD56）
+
+所有的数据写命令都可以被停止命令（CMD12）在任意时刻终止。
+写命令也会在取消选择命令（CMD7）之前停止。
+写命令有：块写操作（CMD24，CMD25）、编程命令（CMD27）、锁定/解锁命令（CMD42）以及写模式下的普通命令（CMD56）
+
+
+== SD & MMC ==
+
+http://www.imhan.com/archives/12/
+
+SD卡不支持CMD1而支持CMD55，MMC卡不支持CMD55而支持CMD1，这样就可以区分这两种卡。
+
+首先，两者在外型的规格上是几乎一致的。而且两都的接口是兼容的。 也就是说，两者可以用同一个卡座来进行读取。
+而且，两者在时序上也是一致的，读写命令控制也完全一样，这就是为什么经常把两者混在一起写的原因。
+
+不过，虽说外型几乎一致，但还是有点差异的。MMC比SD卡要薄一些，并且，长度只有SD卡的一半。
+
+
+在数据位宽方面，MMC卡最大支持8BIT，而SD卡只能支持4BIT传输。
+
+在卡的激活过程，MMC使用CMD1来进行激活，而SD卡使用ACMD41来进行激活的。于是，这两条命令也成了主机区分两种卡的类型的关键。
+
+在获取卡的RCA地址时，MMC卡是由主机分配RCA给设备，而SD卡则是由设备返回RCA给主机。
+
+在CMD6的使用方法上也有很大不同。MMC有EXT_CSD的概念，主要用CMD8进行读取，CMD6进行设置。
+而SD卡则只用CMD6进行UserFunction的设置。SD卡的CMD8主要用于区别SD1.0和SD2.0。
+
+MMC还支持CMD14和CMD19进行主线测试，从而选择合适总线进行通信。SD则不支持。
+
+另外，MMC卡还支持CMD11、CMD20这类数据流操作，因此较多用于媒体设备上。MMC还支持Boot等高级的用法。
+
+== Version1.0 & Version2.0 ==
+
+SD1.1和SD2.0卡主要通过CMD8来区分，
+
