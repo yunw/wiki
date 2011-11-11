@@ -1,0 +1,43 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>Debian nfs 配置</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<p>
+1. 安装
+aptitude install nfs-common nfs-kernel-server portmap
+</p>
+
+<p>
+2. 重启服务
+sudo service nfs-common restart
+sudo service nfs-kernel-server restart
+</p>
+
+<p>
+3. 创建或修改/etc/exports配置文件
+</p>
+
+<pre>
+/opt/nfsroot 192.168.40.* (rw,sync,no_root_squash)
+</pre>
+  
+<p>
+注意： 
+	1) 上面的 * 和后面的括号之间有一个空格，如果没有这个空格扗载时会有以下报错
+		mount.nfs: access denied by server while mounting
+	2) 更新exports文件后，使用命令 sudo exportfs -rv 来刷新一下
+</p>
+
+
+<p>
+4. 测试
+sudo showmount -e
+sudo mount -t nfs 192.168.40.61:/opt/nfsroot /mnt
+</p>
+
+</body>
+</html>

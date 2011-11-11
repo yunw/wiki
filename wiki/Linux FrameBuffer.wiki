@@ -1,0 +1,4 @@
+
+fb_find_mode	modedb.c
+  fb_find_mode_cvt	fbcvt.c
+    fb_cvt_print_name	fbcvt.c

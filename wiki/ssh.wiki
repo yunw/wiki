@@ -1,0 +1,9 @@
+
+http://7056824.blog.51cto.com/69854/403669
+http://www.cnblogs.com/jamin/archive/2011/03/03/1969625.html
+
+
+authorized_keys用于保存所有允许以当前用户身份登录的SSH客户端用户的公钥内容(chmod 600 )
+
+ssh-add 命令把我们的专用密钥添加到 ssh-agent 的高速缓存中
+ssh-add ~/.ssh/id_dsa

@@ -1,0 +1,115 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>git repo</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<p>
+将分支imx_r10.3提交到名为aosp的远程仓库里
+git push aosp imx_r10.3 
+</p>
+
+<p>
+上传分支
+repo forall -c  git push aosp jj07:jj07
+</p>
+
+<p>
+删除本地分支
+repo abandon [分支名]
+</p>
+
+
+<p>
+跟踪远程分支
+git config branch.jj07.remote aosp 
+git config branch.jj07.merge refs/heads/jj07
+</p>
+
+
+<p>
+下载 repo 的地址: <a href="http://android.git.kernel.org/repo">http://android.git.kernel.org/repo</a> ，
+可以用 wget <a href="http://android.git.kernel.org/repo">http://android.git.kernel.org/repo</a> 或者
+curl <a href="http://android.git.kernel.org/repo">http://android.git.kernel.org/repo</a> &gt;~/bin/repo  来下载 repo , chmod a+x ~/bin/repo 
+</p>
+
+<p>
+用repo sync 在抓去 android source code 的时候，会经常出现一些错误导致 repo sync 中断，每次都要手动开始。
+可以用如下的命令，来自动重复：   $?=1;   while [ $? -ne 0 ] ; do  repo sync ; done
+</p>
+
+<p>
+ repo help [ command ] , 显示command 的详细的帮助信息内容
+</p>
+ 
+<p>
+repo init -u URL ,  在当前目录安装 repository ，会在当前目录创建一个目录 ".repo"  -u 参数指定一个URL， 从这个URL 中取得repository 的 manifest 文件。   repo init -u git://android.git.kernel.org/platform/manifest.git
+</p>
+<blockquote>
+可以用 -m 参数来选择 repository 中的某一个特定的 manifest 文件，如果不具体指定，那么表示为默认的 namifest 文件 (default.xml)    repo init -u git://android.git.kernel.org/platform/manifest.git -m dalvik-plus.xml
+</blockquote>
+<blockquote>
+可以用 -b 参数来指定某个manifest 分支。
+</blockquote>
+<blockquote>
+repo init -u git://android.git.kernel.org/platform/manifest.git -b release-1.0
+</blockquote>
+<blockquote>
+可以用命令: repo help init 来获取 repo init 的其他用法
+</blockquote>
+<blockquote>
+4. repo sync [project-list]
+</blockquote>
+<blockquote>
+下载最新本地工作文件，更新成功，这本地文件和repository 中的代码是一样的。 可以指定需要更新的project ， 如果不指定任何参数，会同步整个所有的项目。
+</blockquote>
+<blockquote>
+如果是第一次运行 repo sync ， 则这个命令相当于 git clone ，会把 repository 中的所有内容都拷贝到本地。 如果不是第一次运行 repo sync ， 则相当于 git remote update ;  git rebase origin/branch .  repo sync 会更新 .repo 下面的文件。 如果在merge 的过程中出现冲突， 这需要手动运行  git  rebase --continue
+</blockquote>
+<blockquote>
+5. repo update[ project-list ]
+</blockquote>
+<blockquote>
+上传修改的代码 ，如果你本地的代码有所修改，那么在运行 repo sync 的时候，会提示你上传修改的代码，所有修改的代码分支会上传到 Gerrit (基于web 的代码review 系统), Gerrit 受到上传的代码，会转换为一个个变更，从而可以让人们来review 修改的代码。
+</blockquote>
+<blockquote>
+6. repo diff [ project-list ]
+</blockquote>
+<blockquote>
+显示提交的代码和当前工作目录代码之间的差异。
+</blockquote>
+<blockquote>
+7. repo download  target revision
+</blockquote>
+<blockquote>
+下载特定的修改版本到本地， 例如:  repo download pltform/frameworks/base 1241 下载修改版本为 1241 的代码
+</blockquote>
+<blockquote>
+8. repo start newbranchname
+</blockquote>
+<blockquote>
+创建新的branch分支。 "." 代表当前工作的branch 分支。
+</blockquote>
+<blockquote>
+9.  repo prune [project list]
+</blockquote>
+<blockquote>
+删除已经merge 的 project
+</blockquote>
+<blockquote>
+10. repo foreach [ project-lists] -c command
+</blockquote>
+<blockquote>
+对每一个 project 运行 command 命令
+</blockquote>
+<blockquote>
+11. repo status
+</blockquote>
+<blockquote>
+显示 project 的状态
+</blockquote>
+
+</body>
+</html>

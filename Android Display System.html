@@ -1,0 +1,362 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>Android Display System</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<h2 id="toc_0.1">FramebufferNativeWindow</h2>
+
+<pre>
+    81	FramebufferNativeWindow::FramebufferNativeWindow() 
+    82	    : BASE(), fbDev(0), grDev(0), mUpdateOnDemand(false)
+    83	{
+    84	    hw_module_t const* module;
+    /*
+     * 先看下面的 hw_get_module 分析，hw_get_module 最后会获得 GRALLOC 这个设
+     * 备模块的描述指针，在本篇的后面，大概是
+     *
+        common: {
+            tag: HARDWARE_MODULE_TAG,
+            version_major: 1,
+            version_minor: 0,
+            id: GRALLOC_HARDWARE_MODULE_ID,
+            name: "Graphics Memory Allocator Module",
+            author: "The Android Open Source Project",
+            methods: &amp;gralloc_module_methods
+	},  
+     */
+    85	    if (hw_get_module(GRALLOC_HARDWARE_MODULE_ID, &amp;module) == 0) {
+    86	        int stride;
+    87	        int err;
+    88	        int i;
+    89	        err = framebuffer_open(module, &amp;fbDev);
+    90	        LOGE_IF(err, "couldn't open framebuffer HAL (%s)", strerror(-err));
+    91	        
+    92	        err = gralloc_open(module, &amp;grDev);
+    93	        LOGE_IF(err, "couldn't open gralloc HAL (%s)", strerror(-err));
+    94	
+    95	        // bail out if we can't initialize the modules
+    96	        if (!fbDev || !grDev)
+    97	            return;
+    98	        
+    99	        mUpdateOnDemand = (fbDev-&gt;setUpdateRect != 0);
+   100	        
+   101	        // initialize the buffer FIFO
+   102	        mNumBuffers = fbDev-&gt;reserved[0];
+   103	        if (mNumBuffers != 3 &amp;&amp; mNumBuffers != 2) {
+   104	            LOGE("The framebuffer number got from HAL is not supported(%d)", mNumBuffers);
+   105	            return;
+   106	        }
+   107	        mNumFreeBuffers = mNumBuffers;
+   108	
+   109	        mBufferHead = mNumBuffers-1;
+   110	
+   111	        for (i = 0; i &lt; mNumBuffers; i++)
+   112	            buffers[i] = new NativeBuffer(
+   113	                    fbDev-&gt;width, fbDev-&gt;height, fbDev-&gt;format, GRALLOC_USAGE_HW_FB);
+   114	
+   115	        for (i = 0; i &lt; mNumBuffers; i++) {
+   116	            err = grDev-&gt;alloc(grDev,
+   117	                    fbDev-&gt;width, fbDev-&gt;height, fbDev-&gt;format,
+   118	                    GRALLOC_USAGE_HW_FB, &amp;buffers[i]-&gt;handle, &amp;buffers[i]-&gt;stride);
+   119	
+   120	            LOGE_IF(err, "fb buffer %d allocation failed w=%d, h=%d, err=%s",
+   121	                    i, fbDev-&gt;width, fbDev-&gt;height, strerror(-err));
+   122	        }
+   123	
+   124	        const_cast&lt;uint32_t&amp;&gt;(ANativeWindow::flags) = fbDev-&gt;flags; 
+   125	        const_cast&lt;float&amp;&gt;(ANativeWindow::xdpi) = fbDev-&gt;xdpi;
+   126	        const_cast&lt;float&amp;&gt;(ANativeWindow::ydpi) = fbDev-&gt;ydpi;
+   127	        const_cast&lt;int&amp;&gt;(ANativeWindow::minSwapInterval) = 
+   128	            fbDev-&gt;minSwapInterval;
+   129	        const_cast&lt;int&amp;&gt;(ANativeWindow::maxSwapInterval) = 
+   130	            fbDev-&gt;maxSwapInterval;
+   131	    } else {
+   132	        LOGE("Couldn't get gralloc module");
+   133	    }
+   134	
+   135	    ANativeWindow::setSwapInterval = setSwapInterval;
+   136	    ANativeWindow::dequeueBuffer = dequeueBuffer;
+   137	    ANativeWindow::lockBuffer = lockBuffer;
+   138	    ANativeWindow::queueBuffer = queueBuffer;
+   139	    ANativeWindow::query = query;
+   140	    ANativeWindow::perform = perform;
+   141	}
+</pre>
+
+<h2 id="toc_0.2">gralloc_device_open</h2>
+
+<p>
+ hardware/mx5x/libgralloc/gralloc.c   
+</p>
+ 
+<pre>
+static struct hw_module_methods_t gralloc_module_methods = {
+        open: gralloc_device_open
+};
+</pre>
+<p>
+gralloc_module_methods 中提供了 open
+</p>
+
+<pre>
+在 hardware/libhardware/include/hardware/gralloc.h 中有
+static inline int gralloc_open(const struct hw_module_t* module, 
+        struct alloc_device_t** device) {
+    return module-&gt;methods-&gt;open(module, 
+            GRALLOC_HARDWARE_GPU0, (struct hw_device_t**)device);
+}
+
+static inline int framebuffer_open(const struct hw_module_t* module, 
+        struct framebuffer_device_t** device) {
+    return module-&gt;methods-&gt;open(module, 
+            GRALLOC_HARDWARE_FB0, (struct hw_device_t**)device);
+}
+就用用gralloc_device_open 分别打开设备 "gpu0" 和 "fb0"
+</pre>
+
+<h2 id="toc_0.3">hw_get_module</h2>
+
+<pre>
+    31	#define HAL_LIBRARY_PATH1 "/system/lib/hw"
+    32	#define HAL_LIBRARY_PATH2 "/vendor/lib/hw"
+    33	
+    34	/**
+    35	 * There are a set of variant filename for modules. The form of the filename
+    36	 * is "&lt;MODULE_ID&gt;.variant.so" so for the led module the Dream variants 
+    37	 * of base "ro.product.board", "ro.board.platform" and "ro.arch" would be:
+    38	 *
+    39	 * led.trout.so
+    40	 * led.msm7k.so
+    41	 * led.ARMV6.so
+    42	 * led.default.so
+    43	 */
+    44	
+    45	static const char *variant_keys[] = {
+    46	    "ro.hardware",  /* This goes first so that it can pick up a different
+    47	                       file on the emulator. */
+    48	    "ro.product.board",
+    49	    "ro.board.platform",
+    50	    "ro.arch"
+    51	};
+    52	
+    53	static const int HAL_VARIANT_KEYS_COUNT =
+    54	    (sizeof(variant_keys)/sizeof(variant_keys[0]));
+
+   120	int hw_get_module(const char *id, const struct hw_module_t **module) 
+   121	{
+   122	    int status;
+   123	    int i;
+   124	    const struct hw_module_t *hmi = NULL;
+   125	    char prop[PATH_MAX];
+   126	    char path[PATH_MAX];
+   127	
+   128	    /*
+   129	     * Here we rely on the fact that calling dlopen multiple times on
+   130	     * the same .so will simply increment a refcount (and not load
+   131	     * a new copy of the library).
+   132	     * We also assume that dlopen() is thread-safe.
+   133	     */
+   134	
+   135	    /* Loop through the configuration variants looking for a module */
+   136	    for (i=0 ; i&lt;HAL_VARIANT_KEYS_COUNT+1 ; i++) {
+   137	        if (i &lt; HAL_VARIANT_KEYS_COUNT) {
+   138	            if (property_get(variant_keys[i], prop, NULL) == 0) {
+   139	                continue;
+   140	            }
+   
+            /*
+	     * HAL_LIBRARY_PATH1/ id  /prop
+	     * /system/lib/hw/gralloc.imx5x.so
+	     * 找到之后立即退出循环
+	     */
+   141	            snprintf(path, sizeof(path), "%s/%s.%s.so",
+   142	                    HAL_LIBRARY_PATH1, id, prop);
+   143	            if (access(path, R_OK) == 0) break;
+   144	
+   145	            snprintf(path, sizeof(path), "%s/%s.%s.so",
+   146	                     HAL_LIBRARY_PATH2, id, prop);
+   147	            if (access(path, R_OK) == 0) break;
+   148	        } else {
+   149	            snprintf(path, sizeof(path), "%s/%s.default.so",
+   150	                     HAL_LIBRARY_PATH1, id);
+   151	            if (access(path, R_OK) == 0) break;
+   152	        }
+   153	    }
+   154	
+   155	    status = -ENOENT;
+   156	    if (i &lt; HAL_VARIANT_KEYS_COUNT+1) {
+   157	        /* load the module, if this fails, we're doomed, and we should not try
+   158	         * to load a different variant. */
+   159	        status = load(id, path, module);
+   160	    }
+   161	
+   162	    return status;
+   163	}
+</pre>
+
+<pre>
+load("gralloc", "/system/lib/hw/gralloc.imx5x.so", module)
+
+    61	static int load(const char *id,
+    62	        const char *path,
+    63	        const struct hw_module_t **pHmi)
+    64	{
+    65	    int status;
+    66	    void *handle;
+    67	    struct hw_module_t *hmi;
+    68	
+    69	    /*
+    70	     * load the symbols resolving undefined symbols before
+    71	     * dlopen returns. Since RTLD_GLOBAL is not or'd in with
+    72	     * RTLD_NOW the external symbols will not be global
+    73	     */
+    74	    handle = dlopen(path, RTLD_NOW);
+    75	    if (handle == NULL) {
+    76	        char const *err_str = dlerror();
+    77	        LOGE("load: module=%s\n%s", path, err_str?err_str:"unknown");
+    78	        status = -EINVAL;
+    79	        goto done;
+    80	    }
+    81	
+    
+    /*
+     * libhardware/include/hardware/hardware.h:
+     * #define HAL_MODULE_INFO_SYM_AS_STR  "HMI"
+     * 
+     * 操作 "/system/lib/hw/gralloc.imx5x.so" 库
+     * dlopen 打开这个库，将其load到内存中
+     * dlsym 在库中查找"HMI"这个符号，找到的话则返回它在内存中的地址
+     */
+     
+    82	    /* Get the address of the struct hal_module_info. */
+    83	    const char *sym = HAL_MODULE_INFO_SYM_AS_STR;
+    84	    hmi = (struct hw_module_t *)dlsym(handle, sym);
+    85	    if (hmi == NULL) {
+    86	        LOGE("load: couldn't find symbol %s", sym);
+    87	        status = -EINVAL;
+    88	        goto done;
+    89	    }
+    90	
+    91	    /* Check that the id matches */
+    92	    if (strcmp(id, hmi-&gt;id) != 0) {
+    93	        LOGE("load: id=%s != hmi-&gt;id=%s", id, hmi-&gt;id);
+    94	        status = -EINVAL;
+    95	        goto done;
+    96	    }
+    97	
+    98	    hmi-&gt;dso = handle;
+    99	
+   100	    /* success */
+   101	    status = 0;
+   102	
+   103	    done:
+   104	    if (status != 0) {
+   105	        hmi = NULL;
+   106	        if (handle != NULL) {
+   107	            dlclose(handle);
+   108	            handle = NULL;
+   109	        }
+   110	    } else {
+   111	        LOGV("loaded HAL id=%s path=%s hmi=%p handle=%p",
+   112	                id, path, *pHmi, handle);
+   113	    }
+   114	
+   115	    *pHmi = hmi;
+   116	
+   117	    return status;
+   118	}
+</pre>
+  
+<p>
+那么在库中找到"HMI"这个符号就是找到了hw_module_t这个结构体的首地址，这是什么原理呢？
+</p>
+
+<p>
+读出这个库的符号，可以得到如下信息
+</p>
+<pre>
+linux@debian:hw$ readelf -s gralloc.imx5x.so
+
+Symbol table '.dynsym' contains 113 entries:
+   Num:    Value  Size Type    Bind   Vis      Ndx Name
+   	...
+    39: 00000000     0 FUNC    GLOBAL DEFAULT  UND free
+    40: 00000000     0 FUNC    GLOBAL DEFAULT  UND __aeabi_atexit
+    41: 00006e40     0 NOTYPE  GLOBAL DEFAULT   17 __dso_handle
+    _*42: 00006254   452 OBJECT  GLOBAL DEFAULT   16 HMI*_
+    43: 000042a5    44 FUNC    GLOBAL DEFAULT    7 _Z23gralloc_register_buff
+    44: 00004361    96 FUNC    GLOBAL DEFAULT    7 _Z25gralloc_unregister_bu
+    45: 000041bd   232 FUNC    GLOBAL DEFAULT    7 _Z12gralloc_lockPK16grall
+    46: 000040f1   104 FUNC    GLOBAL DEFAULT    7 _Z14gralloc_unlockPK16gra
+    47: 00000000     0 FUNC    GLOBAL DEFAULT  UND glFinish
+   	...
+</pre>
+  
+<p>
+在 hardware 目录下搜索 HAL_MODULE_INFO_SYM 会得到许多结构体定义
+</p>
+
+<p>
+查看 mx5x/libgralloc/gralloc.cpp ， 有：
+</p>
+
+<pre>
+    86	struct private_module_t HAL_MODULE_INFO_SYM = {
+    87	    base: {
+    88	        common: {
+    89	            tag: HARDWARE_MODULE_TAG,
+    90	            version_major: 1,
+    91	            version_minor: 0,
+    92	            id: GRALLOC_HARDWARE_MODULE_ID,
+    93	            name: "Graphics Memory Allocator Module",
+    94	            author: "The Android Open Source Project",
+    95	            methods: &amp;gralloc_module_methods
+    96	        },
+    97	        registerBuffer: gralloc_register_buffer,
+    98	        unregisterBuffer: gralloc_unregister_buffer,
+    99	        lock: gralloc_lock,
+   100	        unlock: gralloc_unlock,
+   101	    },
+   102	    framebuffer: 0,
+   103	    flags: 0,
+   104	    numBuffers: 0,
+   105	    bufferMask: 0,
+   106	    lock: PTHREAD_MUTEX_INITIALIZER,
+   107	    currentBuffer: 0,
+   108	    pmem_master: -1,
+   109	    pmem_master_base: 0,
+   110	    master_phys: 0
+   111	};
+</pre>
+
+<p>
+在 hardware/libhardware/include/hardware/hardware.h 中有
+#define HAL_MODULE_INFO_SYM         HMI
+这个结构体名实际为 HMI ，这就是它在 .so 中的符号
+</p>
+
+<p>
+hardware/mx5x/libgralloc/gralloc_priv.h :
+	结构体 private_module_t 第一个成员为 gralloc_module_t base;
+</p>
+	
+<p>
+hardware/libhardware/include/hardware/gralloc.h :
+	gralloc_module_t 第一个成员为 struct hw_module_t common;
+</p>
+
+<p>
+最后返回的 HMI 结构体的首地址也即 hw_module_t 的首地址
+</p>
+
+
+<p>
+通过这个过程可以了解到，每个相应硬件设备都有一个 HMI 的结构体，且最终各设备都有
+独立的库位于 /system/lib/hw/ 下
+</p>
+
+</body>
+</html>
