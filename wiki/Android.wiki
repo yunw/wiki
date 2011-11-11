@@ -1,0 +1,29 @@
+
+== 准备 ==
+
+- [[u-boot扎记]]
+ 
+- [[Android 开发环境]]
+
+- [[android 目录结构]]
+
+- [[git repo]]
+
+== 开始 ==
+
+- [[android kernel移植]]
+
+- [[Android 编译错误集]]
+
+- [[adroid bootup log]]
+
+== 深入 ==
+
+- [[android makefile 分析]]
+
+- [[android init 分析]]
+ 
+- [[android event system]]
+
+- [[Android Display System]]
+

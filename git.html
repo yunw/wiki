@@ -5,8 +5,39 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 </head>
 <body>
+
+<ul>
+<li>
+<a href="git 使用笔记.html">git 使用笔记</a>
+</li>
+<li>
+<a href="git replacing LF with CRLF.html">git replacing LF with CRLF</a>
+</li>
+</ul>
+
+<h2 id="toc_0.1">提交本地分支到远程仓库中</h2>
+
 <p>
-暂时这里什么都没有
+将分支jj07提交到名为aosp的远程仓库里的jj07分支
+git push aosp jj07:jj07 
+</p>
+
+<h2 id="toc_0.2">删除远程仓库中的分支</h2>
+
+<p>
+删除远程仓库aosp中的jj07分支
+git push aosp :jj07 
+</p>
+
+<h2 id="toc_0.3">设置本地分支跟踪远程分支</h2>
+
+<p>
+git config branch.jj07.remote aosp 
+git config branch.jj07.merge refs/heads/jj07
+</p>
+
+<p>
+这样设置后，在本地的jj07分支中，使用 git pull/push 会自动与远程仓库aosp中的jj07分支进行数据同步
 </p>
 
 </body>

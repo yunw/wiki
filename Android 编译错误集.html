@@ -1,0 +1,182 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>Android 编译错误集</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<h2 id="toc_0.1">编译 Android</h2>
+
+<p>
+. ./build/envsetup.sh 
+lunch       选择编译的目标板
+</p>
+
+<p>
+Checking build tools versions...
+build/core/main.mk:76: ************************************************************
+build/core/main.mk:77: You are attempting to build on a 32-bit system.
+build/core/main.mk:78: Only 64-bit build environments are supported beyond froyo/2.2.
+build/core/main.mk:79: ************************************************************
+build/core/main.mk:80: *** stop。 停止。
+</p>
+
+<p>
+1. build/core/main.mk
+</p>
+<pre>
+ifneq (64,$(findstring 64,$(build_arch)))
+--&gt; 
+ifneq (i686,$(findstring i686,$(build_arch)))
+</pre>
+
+<p>
+2. 
+./external/clearsilver/cgi/Android.mk
+./external/clearsilver/cs/Android.mk
+./external/clearsilver/util/Android.mk
+./external/clearsilver/java-jni/Android.mk
+./external/wpa_supplicant_6/wpa_supplicant/Android.mk
+./external/wpa_supplicant_6/wpa_supplicant/Android.mk
+./external/wpa_supplicant_ath/wpa_supplicant/Android.mk
+./external/wpa_supplicant_ath/wpa_supplicant/Android.mk
+</p>
+
+<pre>
+LOCAL_CFLAGS += -m64
+LOCAL_LDFLAGS += -m64
+--&gt; 
+LOCAL_CFLAGS += -m32
+LOCAL_LDFLAGS += -m32
+</pre>
+
+<p>
+3. 
+============================================
+Checking build tools versions...
+************************************************************
+You are attempting to build with the incorrect version
+of javac.
+</p>
+ 
+<p>
+Your version is: javac 1.5.0_22.
+The correct version is: 1.6.
+</p>
+ 
+<p>
+Please follow the machine setup instructions at
+</p>
+<blockquote>
+<a href="http://source.android.com/download">http://source.android.com/download</a>
+</blockquote>
+<p>
+************************************************************
+build/core/main.mk:145: *** stop。 停止。
+</p>
+
+<p>
+安装 java 最新版本
+sudo apt-get install 
+</p>
+
+<h2 id="toc_0.2">alsa-sound</h2>
+
+<pre>
+find: “frameworks/base/frameworks/base/docs/html”: 没有那个文件或目录
+find: “out/target/common/docs/gen”: 没有那个文件或目录
+find: “frameworks/base/frameworks/base/docs/html”: 没有那个文件或目录
+find: “out/target/common/docs/gen”: 没有那个文件或目录
+find: “frameworks/base/frameworks/base/docs/html”: 没有那个文件或目录
+find: “out/target/common/docs/gen”: 没有那个文件或目录
+find: “frameworks/base/frameworks/base/docs/html”: 没有那个文件或目录
+find: “out/target/common/docs/gen”: 没有那个文件或目录
+find: “frameworks/base/frameworks/base/docs/html”: 没有那个文件或目录
+find: “out/target/common/docs/gen”: 没有那个文件或目录
+diff: out/target/product/imx53_smd/obj/PACKAGING/updater_extensions_intermediates/register.inc.list: 没有那个文件或目录
+
+
+libelfcopy: Warning: Range lists in .debug_info section aren't in ascending order!
+libelfcopy: Warning: Range lists in .debug_ranges section start at 0x30
+target Strip: libeffects (out/target/product/imx53_smd/obj/lib/libeffects.so)
+make: *** 没有规则可以创建“out/target/product/imx53_smd/obj/SHARED_LIBRARIES/libaudioflinger_intermediates/LINKED/libaudioflinger.so”需要的目标“out/target/product/imx53_smd/obj/lib/libaudio.so”。 停止。
+</pre>
+
+<p>
+缺少 hardware/alsa-sound
+</p>
+
+<h2 id="toc_0.3">NFS</h2>
+
+<p>
+启动后出现如下信息，死机
+</p>
+
+<p>
+Looking up port of RPC 100003/3 on 192.168.40.61
+PHY: 0:00 - Link is Up - 100/Full
+Looking up port of RPC 100005/3 on 192.168.40.61
+VFS: Mounted root (nfs filesystem) on device 0:12.
+Freeing init memory: 196K
+init: cannot open '/initlogo.rle'
+Kernel panic - not syncing: Attempted to kill init!
+[&lt;8003e58c&gt;] (unwind_backtrace+0x0/0xf0) from [&lt;8048461c&gt;] (panic+0x6c/0xe0)
+[&lt;8048461c&gt;] (panic+0x6c/0xe0) from [&lt;8006d8b4&gt;] (do_exit+0x68/0x660)
+[&lt;8006d8b4&gt;] (do_exit+0x68/0x660) from [&lt;8006df5c&gt;] (do_group_exit+0xb0/0xe0)
+[&lt;8006df5c&gt;] (do_group_exit+0xb0/0xe0) from [&lt;80079118&gt;] (get_signal_to_deliver+0x3c4/0x420)
+[&lt;80079118&gt;] (get_signal_to_deliver+0x3c4/0x420) from [&lt;8003c0fc&gt;] (do_signal+0x68/0x5c0)
+[&lt;8003c0fc&gt;] (do_signal+0x68/0x5c0) from [&lt;8003c66c&gt;] (do_notify_resume+0x18/0x5c)
+[&lt;8003c66c&gt;] (do_notify_resume+0x18/0x5c) from [&lt;80039fd0&gt;] (work_pending+0x1c/0x20)
+eth0: no IPv6 routers present
+</p>
+
+<p>
+原因是 nfs 没有配置正确，挂载之后是只读文件系统。重新配置nfs，确保其可读写
+</p>
+
+<p>
+init.freescale.rc 最后几行挂载文件系统全部注释掉(on fs 那一句也要注释)
+</p>
+<pre>
+#on fs
+# mount ext4 partitions
+#mount ext4 /dev/block/mmcblk0p2 /system
+#mount ext4 /dev/block/mmcblk0p2 /system ro remount
+#mount ext4 /dev/block/mmcblk0p5 /data nosuid nodev nodelalloc
+#mount ext4 /dev/block/mmcblk0p6 /cache nosuid nodev
+</pre>
+  
+
+<h2 id="toc_0.4">Rotation</h2>
+
+<p>
+启动之后屏幕旋转了
+</p>
+
+<p>
+init.freescale.rc 中有
+</p>
+<pre>
+setprop ro.sf.hwrotation 270
+</pre>
+<p>
+注释掉该句即可
+</p>
+
+<h2 id="toc_0.5">Suspend</h2>
+
+<pre>
+I/BootReceiver( 2463): Got intent with action android.intent.action.MEDIA_SCANNER_FINISHED
+W/ActivityManager( 2186): finishReceiver called but no pending broadcasts
+request_suspend_state: mem (0-&gt;3) at 79993234249 (1970-01-02 00:01:07.126354247 UTC)
+I/power   ( 2186): *** set_screen_state 0
+D/SurfaceFlinger( 2186): About to give-up screen, flinger = 0x188440
+PM: Syncing filesystems ... done.
+Freezing user space processes ... (elapsed 0.01 seconds) done.
+Freezing remaining freezable tasks ... (elapsed 0.01 seconds) done.
+Suspending console(s) (use no_console_suspend to debug)
+</pre>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>android kernel移植</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+
+
+<p>
+已有一个可以运行在目标板mx23上的内核，现在将anroid修改的部分添加到这个内核上。
+</p>
+
+<p>
+cp -rf fs/yaffs2/ /home/linux/Project/mx23/linux-2.6.31/fs/ 
+cp -rf drivers/staging/android/ /home/linux/Project/mx23/linux-2.6.31/drivers/staging/
+cp -rf drivers/switch/ /home/linux/Project/mx23/linux-2.6.31/drivers/
+</p>
+
+</body>
+</html>

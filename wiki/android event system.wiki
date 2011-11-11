@@ -1,0 +1,12 @@
+
+从 [[input system|linux input system]] 中可以了解到，读 /dev/input/ 下的某个设备文件即可得到我们想要的事件。
+
+android 继而的处理流程为：
+
+frameworks/base/libs/ui/EventHub.cpp
+
+http://hi.baidu.com/zhouhanqing/blog/item/9d18a3cc16020a580eb3451c.html
+
+frameworks/base/services/jni/com_android_server_KeyInputQueue.cpp
+
+

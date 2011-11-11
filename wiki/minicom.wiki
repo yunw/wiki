@@ -1,0 +1,4 @@
+
+- 打开minicom颜色: minicom -c on
+- 自动换行
+  Ctrl-A + w 出现 "Linewrap ON"

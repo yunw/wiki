@@ -1,0 +1,70 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>u-boot扎记</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<h2 id="toc_0.1">tftp</h2>
+
+<p>
+1. 参考 <a href="Debian tftp配置.html">Debian tftp配置</a> 和 <a href="fedora13安装配置tftp.html">fedora13安装配置tftp</a> 将PC端的tftp环境搭好
+</p>
+
+<p>
+2. 设置u-boot中的环境变量
+</p>
+
+<pre>
+setenv ipaddr 192.168.40.111
+setenv serverip 192.168.40.61
+setenv ethaddr 00:04:9f:00:ea:d3
+setenv fec_addr 00:04:9f:00:ea:d3
+setenv loadaddr &lt;kernel load addr&gt;  //[0x90800000 for i.MX51, 0x70800000 for i.MX50/3]       
+setenv bootfile uImage
+</pre>
+
+<p>
+3. u-boot tftp相关命令
+</p>
+
+<p>
+tftp 0x70800000 uImage //从tftp上将uImage文件down到DDR中，uImage是PC端的tftpboot目录中的文件
+tftpboot uImage
+</p>
+
+<h2 id="toc_0.2">bootm</h2>
+
+<p>
+bootm 0x70800000
+</p>
+
+<p>
+bootm 会将该地址之后的数据当作一个uImage，首先对其前64字节作解析
+详见<a href="http://blog.chinaunix.net/space.php?uid=20799298&amp;do=blog&amp;id=99666">| 这里</a>
+</p>
+
+<h2 id="toc_0.3">tftp</h2>
+
+<p>
+tftp 0x70800000 uImage
+</p>
+
+<p>
+tftp 将 uImage 下载到RAM中 0x70800000 开始处
+</p>
+
+<h2 id="toc_0.4">tftpboot</h2>
+
+<p>
+tftpboot uImage
+</p>
+
+<p>
+tftp 下载 uImage 到环境变量 loadaddr 指定的地址处
+如果环境变量中 autostart 为 yes 的话，则调用 bootm 命令从 loadaddr 启动 kernel
+</p>
+
+</body>
+</html>

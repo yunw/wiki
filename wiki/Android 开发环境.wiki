@@ -1,0 +1,6 @@
+
+SD卡启动uboot
+
+uboot中使用tftp下载uImage(kernel)
+
+kernel启动后使用nfs挂载相应文件系统

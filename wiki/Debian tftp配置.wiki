@@ -1,0 +1,6 @@
+
+sudo apt-get install tftp tftpd xinetd
+
+参见[[fedora13安装配置tftp]]
+编辑/新建 /etc/xinetd.d/tftp
+

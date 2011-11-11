@@ -1,0 +1,430 @@
+
+PowerPrep start initialize power...
+Battery Voltage = 4.21V
+boot from battery. 5v input not detected
+LLCSep 28 201117:16:32
+EVK board
+EMI_CTRL 0x1C084040
+FRAC 0x92926192
+init_ddr_mt46v32m16_133Mhz
+power 0x00820710
+Frac 0x92926192
+start change cpu freq
+hbus 0x00000003
+cpu 0x00010001
+LLLLLLLFCLJUncompressing Linux...............................................................................................
+Linux version 2.6.31-626-g602af1c-ge735e55-dirty (linux@debian) (gcc version 4.4.0 (GCC) ) #1 PREEMPT Mon Oct 10 12:39:48 CS1
+CPU: ARM926EJ-S [41069265] revision 5 (ARMv5TEJ), cr=00053177
+CPU: VIVT data cache, VIVT instruction cache
+Machine: Freescale MX23EVK board
+Memory policy: ECC disabled, Data cache writeback
+INITRD: 0x40400000+0x00400000 overlaps in-use memory region - disabling initrd
+Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 32512
+Kernel command line: console=ttyAM0,115200 root=/dev/mmcblk0p2 init=/init rw rootwait lcd_panel=lms430 no_console_suspend
+PID hash table entries: 512 (order: 9, 2048 bytes)
+Dentry cache hash table entries: 16384 (order: 4, 65536 bytes)
+Inode-cache hash table entries: 8192 (order: 3, 32768 bytes)
+Memory: 128MB = 128MB total
+Memory: 125232KB available (4008K code, 287K data, 132K init, 0K highmem)
+SLUB: Genslabs=11, HWalign=32, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+NR_IRQS:224
+Console: colour dummy device 80x30
+console [ttyAM0] enabled
+Calibrating delay loop... 231.83 BogoMIPS (lpj=1159168)
+Security Framework initialized
+Mount-cache hash table entries: 512
+CPU: Testing write buffer coherency: ok
+regulator: core version 0.5
+NET: Registered protocol family 16
+regulator: vddd: 800 <--> 1575 mV fast normal 
+regulator: vddd_bo: 800 <--> 1575 mV fast normal 
+regulator: vdda: 1500 <--> 2275 mV fast normal 
+regulator: vddio: 2800 <--> 3575 mV fast normal 
+regulator: overall_current: 0 <--> 2147483 mA fast normal 
+regulator: mxs-duart-1: 0 <--> 2147483 mA fast normal 
+regulator: mxs-bl-1: 0 <--> 2147483 mA fast normal 
+regulator: mxs-i2c-1: 0 <--> 2147483 mA fast normal 
+regulator: mmc_ssp-1: 0 <--> 2147483 mA fast normal 
+regulator: mmc_ssp-2: 0 <--> 2147483 mA fast normal 
+regulator: charger-1: 0 <--> 2147483 mA fast normal 
+regulator: power-test-1: 0 <--> 2147483 mA fast normal 
+regulator: cpufreq-1: 0 <--> 2147483 mA fast normal 
+i.MX IRAM pool: 28 KB@0xc8808000
+bio: create slab <bio-0> at 0
+SCSI subsystem initialized
+usbcore: registered new interface driver usbfs
+usbcore: registered new interface driver hub
+usbcore: registered new device driver usb
+NET: Registered protocol family 2
+IP route cache hash table entries: 1024 (order: 0, 4096 bytes)
+TCP established hash table entries: 4096 (order: 3, 32768 bytes)
+TCP bind hash table entries: 4096 (order: 2, 16384 bytes)
+TCP: Hash tables configured (established 4096 bind 4096)
+TCP reno registered
+NET: Registered protocol family 1
+Bus freq driver module loaded
+usb: DR gadget (utmi) registered
+mxs_cpu_init: cpufreq init finished
+msgmni has been set to 244
+alg: No test for stdrng (krng)
+cryptodev: driver loaded.
+io scheduler noop registered
+io scheduler anticipatory registered
+io scheduler deadline registered
+io scheduler cfq registered (default)
+Console: switching to colour frame buffer device 60x34
+mxs-duart.0: ttyAM0 at MMIO 0x80070000 (irq = 0) is a DebugUART
+mxs-auart.1: ttySP1 at MMIO 0x8006c000 (irq = 24) is a mxs-auart.1
+Found APPUART 3.0.0
+brd: module loaded
+loop: module loaded
+i.MX GPMI NFC
+NFC: Version 0, 4-chip GPMI and BCH
+Boot ROM: Version 0, Single/dual-chip boot area, no block mark swapping
+Scanning for NAND Flash chips...
+NAND device: Manufacturer ID: 0x98, Chip ID: 0xd3 (Toshiba NAND 1GiB 3,3V 8-bit)
+-----------------------------
+NAND Flash Device Information
+-----------------------------
+Manufacturer      : Toshiba (0x98)
+Device Code       : 0xd3
+Cell Technology   : MLC
+Chip Size         : 1 GiB
+Pages per Block   : 128
+Page Geometry     : 2048+64
+ECC Strength      : 4 bits
+ECC Size          : 512 B
+Data Setup Time   : 35 ns
+Data Hold Time    : 30 ns
+Address Setup Time: 0 ns
+GPMI Sample Delay : 6 ns
+tREA              : Unknown
+tRLOH             : Unknown
+tRHOH             : Unknown
+Description       : TH58NVG3D4xFT00
+-----------------
+Physical Geometry
+-----------------
+Chip Count             : 1
+Page Data Size in Bytes: 2048 (0x800)
+Page OOB Size in Bytes : 64
+Block Size in Bytes    : 262144 (0x40000)
+Block Size in Pages    : 128 (0x80)
+Chip Size in Bytes     : 1073741824 (0x40000000)
+Chip Size in Pages     : 524288 (0x80000)
+Chip Size in Blocks    : 4096 (0x1000)
+Medium Size in Bytes   : 1073741824 (0x40000000)
+------------
+NFC Geometry
+------------
+ECC Algorithm          : BCH
+ECC Strength           : 8
+Page Size in Bytes     : 2112
+Metadata Size in Bytes : 10
+ECC Chunk Size in Bytes: 512
+ECC Chunk Count        : 4
+Payload Size in Bytes  : 2048
+Auxiliary Size in Bytes: 16
+Auxiliary Status Offset: 12
+Block Mark Byte Offset : 0
+Block Mark Bit Offset  : 0
+-----------------
+Boot ROM Geometry
+-----------------
+Boot Area Count            : 1
+Boot Area Size in Bytes    : 41943040 (0x2800000)
+Stride Size in Pages       : 64
+Search Area Stride Exponent: 2
+Scanning for an NCB fingerprint...
+  Looking for a fingerprint in page 0x0
+  Found a fingerprint
+Scanning device for bad blocks
+Bad eraseblock 2536 at 0x000027a00000
+Bad eraseblock 3354 at 0x000034680000
+Bad eraseblock 3638 at 0x000038d80000
+Bad eraseblock 3639 at 0x000038dc0000
+Boot area protection is enabled.
+Creating 2 MTD partitions on "gpmi-nfc-main":
+0x000000000000-0x000002800000 : "gpmi-nfc-0-boot"
+0x000002800000-0x000040000000 : "gpmi-nfc-general-use"
+usbmon: debugfs is not available
+Initializing USB Mass Storage driver...
+usbcore: registered new interface driver usb-storage
+USB Mass Storage support registered.
+mice: PS/2 mouse device common for all mice
+input: mxs-kbd as /class/input/input0
+input: MXS touchscreen as /class/input/input1
+MXS RTC driver v1.0 hardware v2.0.0
+mxs-rtc mxs-rtc.0: rtc core: registered mxs-rtc as rtc0
+Linux video capture interface: v2.00
+mxs-pxp mxs-pxp.0: initialized
+IRQ 3/mxs-battery: IRQF_DISABLED is not guaranteed on shared IRQs
+mxs watchdog: initialized, heartbeat 19 sec
+mxs-mmc: MXS SSP Controller MMC Interface driver
+ssp_set_rate: error -110
+mxs-mmc mxs-mmc.0: mmc0: MXS SSP MMC DMAIRQ 14 ERRIRQ 15 
+dcp dcp.0: DCP crypto enabled.!
+Advanced Linux Sound Architecture Driver Version 1.0.20.
+mxs-adc-audio mxs-adc-audio.0: MXS ADC/DAC Audio Codec 
+No device for DAI mxs adc/dac
+No device for DAI mxs adc/dac
+asoc: mxs adc/dac <-> mxs adc/dac mapping ok
+Failed to add route HP MUX->HPR
+ALSA device list:
+  #0: MXS EVK (mxs adc/dac)
+TCP cubic registered
+NET: Registered protocol family 10
+IPv6 over IPv4 tunneling driver
+NET: Registered protocol family 17
+RPC: Registered udp transport module.
+RPC: Registered tcp transport module.
+mxs-rtc mxs-rtc.0: setting system clock to 1970-01-01 00:00:11 UTC (11)
+Waiting for root device /dev/mmcblk0p2...
+mmc0: new SD card at address e624
+mmcblk0: mmc0:e624 SD02G 1.89 GiB 
+ mmcblk0: p1 p2 p4 < p5 p6 p7 >
+kjournald starting.  Commit interval 5 seconds
+EXT3-fs warning: maximal mount count reached, running e2fsck is recommended
+EXT3 FS on mmcblk0p2, internal journal
+EXT3-fs: recovery complete.
+EXT3-fs: mounted filesystem with writeback data mode.
+VFS: Mounted root (ext3 filesystem) on device 179:2.
+Freeing init memory: 132K
+init: ######### hello world ########
+init: reading config file
+[ on init ]
+[ on boot ]
+[ service console ]
+[ service ainit: ######### hardware freescale ########
+dbd ]
+[ on propinit: device init
+erty:ro.kernel.qemu=1 ]
+[ on property:persist.sinit: event { 'add', '/class/regulator/regulator.0', 'regulator', '', -1, -1 }
+ervice.adb.enable=1 ]
+[ on propinit: event { 'add', '/class/regulator/regulator.1', 'regulator', '', -1, -1 }
+erty:persist.service.adbinit: event { 'add', '/class/regulator/regulator.2', 'regulator', '', -1, -1 }
+.enable=0 ]
+[ service servicemainit: event { 'add', '/class/regulator/regulator.3', 'regulator', '', -1, -1 }
+nager ]
+[ service vold ]
+[ serinit: event { 'add', '/class/regulator/regulator.4', 'regulator', '', -1, -1 }
+vice nexus ]
+[ service debuggerinit: event { 'add', '/class/regulator/regulator.5', 'regulator', '', -1, -1 }
+d ]
+[ service ril-daemon ]
+[ sinit: event { 'add', '/class/regulator/regulator.6', 'regulator', '', -1, -1 }
+ervice zygote ]
+[ service mediainit: event { 'add', '/class/regulator/regulator.7', 'regulator', '', -1, -1 }
+ ]
+[ service bootsound ]
+[ serinit: event { 'add', '/class/regulator/regulator.8', 'regulator', '', -1, -1 }
+vice bootanim ]
+[ service dbus init: event { 'add', '/class/regulator/regulator.9', 'regulator', '', -1, -1 }
+]
+[ service hcid ]
+[ service hinit: event { 'add', '/class/regulator/regulator.10', 'regulator', '', -1, -1 }
+fag ]
+[ service hsag ]
+[ serviinit: event { 'add', '/class/regulator/regulator.11', 'regulator', '', -1, -1 }
+ce installd ]
+[ service flash_rinit: event { 'add', '/class/regulator/regulator.12', 'regulator', '', -1, -1 }
+ecovery ]
+[ service racoon ]
+[init: event { 'add', '/class/bdi/default', 'bdi', '', -1, -1 }
+ service mtpd ]
+[ serviinit: event { 'add', '/class/bdi/1:0', 'bdi', '', -1, -1 }
+ce keystore ]
+init: event { 'add', '/class/bdi/1:1', 'bdi', '', -1, -1 }
+init: event { 'add', '/class/bdi/1:2', 'bdi', '', -1, -1 }
+init: event { 'add', '/class/bdi/1:3', 'bdi', '', -1, -1 }
+init: event { 'add', '/class/bdi/7:0', 'bdi', '', -1, -1 }
+init: event { 'add', '/class/bdi/7:1', 'bdi', '', -1, -1 }
+init: event { 'add', '/class/bdi/7:2', 'bdi', '', -1, -1 }
+init: event { 'add', '/class/bdi/7:3', 'bdi', '', -1, -1 }
+init: event { 'add', '/class/bdi/7:4', 'bdi', '', -1, -1 }
+init: event { 'add', '/class/bdi/7:5', 'bdi', '', -1, -1 }
+init: event { 'add', '/class/bdi/7:6', 'bdi', '', -1, -1 }
+init: event { 'add', '/class/bdi/7:7', 'bdi', '', -1, -1 }
+init: event { 'add', '/class/bdi/31:0', 'bdi', '', -1, -1 }
+init: event { 'add', '/class/bdi/179:0', 'bdi', '', -1, -1 }
+init: event { 'add', '/class/backlight/mxs-bl', 'backlight', '', -1, -1 }
+init: event { 'add', '/class/tty/tty', 'tty', '', 5, 0 }
+init: event { 'add', '/class/tty/console', 'tty', '', 5, 1 }
+init: event { 'add', '/class/tty/tty0', 'tty', '', 4, 0 }
+init: event { 'add', '/class/tty/tty1', 'tty', '', 4, 1 }
+init: event { 'add', '/class/tty/tty2', 'tty', '', 4, 2 }
+init: event { 'add', '/class/tty/tty3', 'tty', '', 4, 3 }
+init: event { 'add', '/class/tty/tty4', 'tty', '', 4, 4 }
+init: event { 'add', '/class/tty/tty5', 'tty', '', 4, 5 }
+init: event { 'add', '/class/tty/tty6', 'tty', '', 4, 6 }
+init: event { 'add', '/class/tty/tty7', 'tty', '', 4, 7 }
+init: event { 'add', '/class/tty/tty8', 'tty', '', 4, 8 }
+init: event { 'add', '/class/tty/tty9', 'tty', '', 4, 9 }
+init: event { 'add', '/class/tty/tty10', 'tty', '', 4, 10 }
+init: event { 'add', '/class/tty/tty11', 'tty', '', 4, 11 }
+init: event { 'add', '/class/tty/tty12', 'tty', '', 4, 12 }
+init: event { 'add', '/class/tty/tty13', 'tty', '', 4, 13 }
+init: event { 'add', '/class/tty/tty14', 'tty', '', 4, 14 }
+init: event { 'add', '/class/tty/tty15', 'tty', '', 4, 15 }
+init: event { 'add', '/class/tty/tty16', 'tty', '', 4, 16 }
+init: event { 'add', '/class/tty/tty17', 'tty', '', 4, 17 }
+init: event { 'add', '/class/tty/tty18', 'tty', '', 4, 18 }
+init: event { 'add', '/class/tty/tty19', 'tty', '', 4, 19 }
+init: event { 'add', '/class/tty/tty20', 'tty', '', 4, 20 }
+init: event { 'add', '/class/tty/tty21', 'tty', '', 4, 21 }
+init: event { 'add', '/class/tty/tty22', 'tty', '', 4, 22 }
+init: event { 'add', '/class/tty/tty23', 'tty', '', 4, 23 }
+init: event { 'add', '/class/tty/tty24', 'tty', '', 4, 24 }
+init: event { 'add', '/class/tty/tty25', 'tty', '', 4, 25 }
+init: event { 'add', '/class/tty/tty26', 'tty', '', 4, 26 }
+init: event { 'add', '/class/tty/tty27', 'tty', '', 4, 27 }
+init: event { 'add', '/class/tty/tty28', 'tty', '', 4, 28 }
+init: event { 'add', '/class/tty/tty29', 'tty', '', 4, 29 }
+init: event { 'add', '/class/tty/tty30', 'tty', '', 4, 30 }
+init: event { 'add', '/class/tty/tty31', 'tty', '', 4, 31 }
+init: event { 'add', '/class/tty/tty32', 'tty', '', 4, 32 }
+init: event { 'add', '/class/tty/tty33', 'tty', '', 4, 33 }
+init: event { 'add', '/class/tty/tty34', 'tty', '', 4, 34 }
+init: event { 'add', '/class/tty/tty35', 'tty', '', 4, 35 }
+init: event { 'add', '/class/tty/tty36', 'tty', '', 4, 36 }
+init: event { 'add', '/class/tty/tty37', 'tty', '', 4, 37 }
+init: event { 'add', '/class/tty/tty38', 'tty', '', 4, 38 }
+init: event { 'add', '/class/tty/tty39', 'tty', '', 4, 39 }
+init: event { 'add', '/class/tty/tty40', 'tty', '', 4, 40 }
+init: event { 'add', '/class/tty/tty41', 'tty', '', 4, 41 }
+init: event { 'add', '/class/tty/tty42', 'tty', '', 4, 42 }
+init: event { 'add', '/class/tty/tty43', 'tty', '', 4, 43 }
+init: event { 'add', '/class/tty/tty44', 'tty', '', 4, 44 }
+init: event { 'add', '/class/tty/tty45', 'tty', '', 4, 45 }
+init: event { 'add', '/class/tty/tty46', 'tty', '', 4, 46 }
+init: event { 'add', '/class/tty/tty47', 'tty', '', 4, 47 }
+init: event { 'add', '/class/tty/tty48', 'tty', '', 4, 48 }
+init: event { 'add', '/class/tty/tty49', 'tty', '', 4, 49 }
+init: event { 'add', '/class/tty/tty50', 'tty', '', 4, 50 }
+init: event { 'add', '/class/tty/tty51', 'tty', '', 4, 51 }
+init: event { 'add', '/class/tty/tty52', 'tty', '', 4, 52 }
+init: event { 'add', '/class/tty/tty53', 'tty', '', 4, 53 }
+init: event { 'add', '/class/tty/tty54', 'tty', '', 4, 54 }
+init: event { 'add', '/class/tty/tty55', 'tty', '', 4, 55 }
+init: event { 'add', '/class/tty/tty56', 'tty', '', 4, 56 }
+init: event { 'add', '/class/tty/tty57', 'tty', '', 4, 57 }
+init: event { 'add', '/class/tty/tty58', 'tty', '', 4, 58 }
+init: event { 'add', '/class/tty/tty59', 'tty', '', 4, 59 }
+init: event { 'add', '/class/tty/tty60', 'tty', '', 4, 60 }
+init: event { 'add', '/class/tty/tty61', 'tty', '', 4, 61 }
+init: event { 'add', '/class/tty/tty62', 'tty', '', 4, 62 }
+init: event { 'add', '/class/tty/tty63', 'tty', '', 4, 63 }
+init: event { 'add', '/class/tty/ptmx', 'tty', '', 5, 2 }
+init: event { 'add', '/class/tty/ttyAM0', 'tty', '', 204, 16 }
+init: event { 'add', '/class/tty/ttySP1', 'tty', '', 242, 1 }
+init: event { 'add', '/class/vtconsole/vtcon0', 'vtconsole', '', -1, -1 }
+init: event { 'add', '/class/vtconsole/vtcon1', 'vtconsole', '', -1, -1 }
+init: event { 'add', '/class/i2c-adapter/i2c-0', 'i2c-adapter', '', -1, -1 }
+init: event { 'add', '/class/i2c-adapter/i2c-0/0-003a', 'i2c', '', -1, -1 }
+init: event { 'add', '/class/graphics/fbcon', 'graphics', '', -1, -1 }
+init: event { 'add', '/class/graphics/fb0', 'graphics', '', 29, 0 }
+init: event { 'add', '/class/misc/rfkill', 'misc', '', 10, 63 }
+init: event { 'add', '/class/misc/crypto', 'misc', '', 10, 62 }
+init: event { 'add', '/class/misc/mxs_viim', 'misc', '', 10, 61 }
+init: event { 'add', '/class/misc/ubi_ctrl', 'misc', '', 10, 60 }
+init: event { 'add', '/class/misc/psaux', 'misc', '', 10, 1 }
+init: event { 'add', '/class/misc/watchdog', 'misc', '', 10, 130 }
+init: event { 'add', '/class/misc/dcpboot', 'misc', '', 10, 59 }
+init: event { 'add', '/class/misc/cpu_dma_latency', 'misc', '', 10, 58 }
+init: event { 'add', '/class/misc/network_latency', 'misc', '', 10, 57 }
+init: event { 'add', '/class/misc/network_throughput', 'misc', '', 10, 56 }
+init: event { 'add', '/class/input/mice', 'input', '', 13, 63 }
+init: event { 'add', '/class/input/input0', 'input', '', -1, -1 }
+init: event { 'add', '/class/input/input0/event0', 'input', '', 13, 64 }
+init: event { 'add', '/class/input/input1', 'input', '', -1, -1 }
+init: event { 'add', '/class/input/input1/event1', 'input', '', 13, 65 }
+init: event { 'add', '/class/rtc/rtc0', 'rtc', '', 254, 0 }
+init: event { 'add', '/class/power_supply/battery', 'power_supply', '', -1, -1 }
+init: event { 'add', '/class/power_supply/ac', 'power_supply', '', -1, -1 }
+init: event { 'add', '/class/power_supply/usb', 'power_supply', '', -1, -1 }
+init: event { 'add', '/class/mmc_host/mmc0', 'mmc_host', '', -1, -1 }
+init: event { 'add', '/class/mmc_host/mmc0/mmc0:e624', 'mmc', '', -1, -1 }
+init: event { 'add', '/class/net/lo', 'net', '', -1, -1 }
+init: event { 'add', '/class/net/sit0', 'net', '', -1, -1 }
+init: event { 'add', '/class/mem/mem', 'mem', '', 1, 1 }
+init: event { 'add', '/class/mem/kmem', 'mem', '', 1, 2 }
+init: event { 'add', '/class/mem/null', 'mem', '', 1, 3 }
+init: event { 'add', '/class/mem/zero', 'mem', '', 1, 5 }
+init: event { 'add', '/class/mem/full', 'mem', '', 1, 7 }
+init: event { 'add', '/class/mem/random', 'mem', '', 1, 8 }
+init: event { 'add', '/class/mem/urandom', 'mem', '', 1, 9 }
+init: event { 'add', '/class/mem/kmsg', 'mem', '', 1, 11 }
+init: event { 'add', '/class/vc/vcs', 'vc', '', 7, 0 }
+init: event { 'add', '/class/vc/vcsa', 'vc', '', 7, 128 }
+init: event { 'add', '/class/vc/vcs1', 'vc', '', 7, 1 }
+init: event { 'add', '/class/vc/vcsa1', 'vc', '', 7, 129 }
+init: event { 'add', '/class/mtd/mtd0', 'mtd', '', 90, 0 }
+init: event { 'add', '/class/mtd/mtd0ro', 'mtd', '', 90, 1 }
+init: event { 'add', '/class/mtd/mtd1', 'mtd', '', 90, 2 }
+init: event { 'add', '/class/mtd/mtd1ro', 'mtd', '', 90, 3 }
+init: event { 'add', '/class/video4linux/video0', 'video4linux', '', 81, 0 }
+init: event { 'add', '/class/sound/timer', 'sound', '', 116, 33 }
+init: event { 'add', '/class/sound/pcmC0D0p', 'sound', '', 116, 16 }
+init: event { 'add', '/class/sound/pcmC0D0c', 'sound', '', 116, 24 }
+init: event { 'add', '/class/sound/controlC0', 'sound', '', 116, 0 }
+init: event { 'add', '/block/ram0', 'block', '', 1, 0 }
+init: event { 'add', '/block/ram1', 'block', '', 1, 1 }
+init: event { 'add', '/block/ram2', 'block', '', 1, 2 }
+init: event { 'add', '/block/ram3', 'block', '', 1, 3 }
+init: event { 'add', '/block/loop0', 'block', '', 7, 0 }
+init: event { 'add', '/block/loop1', 'block', '', 7, 1 }
+init: event { 'add', '/block/loop2', 'block', '', 7, 2 }
+init: event { 'add', '/block/loop3', 'block', '', 7, 3 }
+init: event { 'add', '/block/loop4', 'block', '', 7, 4 }
+init: event { 'add', '/block/loop5', 'block', '', 7, 5 }
+init: event { 'add', '/block/loop6', 'block', '', 7, 6 }
+init: event { 'add', '/block/loop7', 'block', '', 7, 7 }
+init: event { 'add', '/block/mtdblock0', 'block', '', 31, 0 }
+init: event { 'add', '/block/mtdblock1', 'block', '', 31, 1 }
+init: event { 'add', '/block/mmcblk0', 'block', '', 179, 0 }
+init: event { 'add', '/block/mmcblk0/mmcblk0p1', 'block', '', 179, 1 }
+init: event { 'add', '/block/mmcblk0/mmcblk0p2', 'block', '', 179, 2 }
+init: event { 'add', '/block/mmcblk0/mmcblk0p4', 'block', '', 179, 4 }
+init: event { 'add', '/block/mmcblk0/mmcblk0p5', 'block', '', 179, 5 }
+init: event { 'add', '/block/mmcblk0/mmcblk0p6', 'block', '', 179, 6 }
+init: event { 'add', '/block/mmcblk0/mmcblk0p7', 'block', '', 179, 7 }
+init: event { 'add', '/devices/platform/mxs_reg.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs_reg.3', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs_reg.1', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs_reg.2', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs_reg.4', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs_reg.101', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs_reg.102', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs_reg.103', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs_reg.104', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs_reg.105', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs_reg.106', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs_reg.107', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs_reg.108', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/fsl-ehci', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/fsl-usb2-udc', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-dma-apbh.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-dma-apbx.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-lradc.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/gpmi-nfc.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs_viim.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-i2c.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-mmc.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-duart.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-auart.1', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-kbd.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-wdt.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-ts.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-rtc.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/dcp.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-fb.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-pxp.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-battery.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-persistent.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-adc-audio.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/mxs-bl.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/busfreq.0', 'platform', '', -1, -1 }
+init: event { 'add', '/devices/platform/soc-audio.0', 'platform', '', -1, -1 }
+init: coldboot 1516754 uS
+Kernel panic - not syncing: Attempted to kill init!
+

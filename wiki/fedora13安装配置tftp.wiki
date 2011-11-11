@@ -1,0 +1,44 @@
+
+
+不太懂这个协议是什么，也没有深究。
+
+现在使用fedora13, iso里竟然没有tftp相关的rpm。只好从源码安装
+
+1. 下载tftp-hpa-5.0.tar.gz
+	./configure --prefix=/usr
+	make
+	sudo make install
+
+2. 编辑（新建）/etc/default/tftpd-hpa
+{{{
+ RUN_DAEMON="yes" 
+ OPTIONS="-l -c -s /home/linux/tftpboot"  
+  }}}
+  
+3. 编辑（新建）/etc/xinetd.d/tftp
+{{{
+service tftp
+{
+socket_type = dgram
+protocol = udp
+wait = yes
+user = root
+server = /usr/sbin/in.tftpd
+server_args = -s /home/linux/tftpboot
+disable = no
+per_source = 11
+cps = 100 2
+flags = IPv4
+}
+}}}
+
+4. 重启服务 sudo service xinetd restart
+   关防火墙，selinux
+
+5. netstat -au| grep tftp
+   看到tftp服务正在运行
+
+测试：
+tftp 127.0.0.1
+get abc
+put test

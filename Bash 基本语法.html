@@ -1,0 +1,404 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>Bash 基本语法</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+<p>
+<a href="http://www.aka.org.cn/Lectures/002/Lecture-2.1.2/bash-syntax.html">http://www.aka.org.cn/Lectures/002/Lecture-2.1.2/bash-syntax.html</a>
+</p>
+
+<h2 id="toc_0.1">变量</h2>
+
+<ul>
+<li>
+Bash中变量, 不能含有保留字, 不能含有"-"等保留字符, 也不能含有空格
+</li>
+<li>
+Bash中变量不需要定义, 直接使用即可. 如果未赋初值, 则其值为空(NULL)
+</li>
+<li>
+变量赋值时, 等号(=)左右两边不能有空格
+</li>
+<li>
+除了变量赋值和变量用在FOR循环语句中, BASH使用变量必须在前面加上"$"符号
+</li>
+</ul>
+
+<ul>
+<li>
+以单引号括起来的变量将不被BASH解释为变量, 如'$STR', 而被看作纯粹的字符串.
+<br />  更为标准的变量引用方式是 ${STR}, 通常省略大括号, 但复杂情况时最好加上大括号
+</li>
+</ul>
+  
+<ul>
+<li>
+BASH变量也没有类型之分, 一个变量即可以被定义为一个字符串, 也可以被再定义为
+<br />  整数. 如果对该变量进行整数运算, 则其被解释为整数; 若对其进行字符串操作, 则
+<br />  解释为字符串
+</li>
+</ul>
+  
+<ul>
+<li>
+整数变量计算, 有 + - * /. 整数运算一般通过let和expr两个指定来实现.如
+<pre>
+  		let "x = $x + 1"
+  也可写作:
+  		x = `expr $x + 1`
+</pre>
+</li>
+</ul>
+  		
+<ul>
+<li>
+比较操作, 整数变量与字符串变量各不相同:
+</li>
+</ul>
+
+<table>
+<tr>
+<th>对应的操作</th>
+<th>整数操作</th>
+<th>字符串操作</th>
+</tr>
+<tr>
+<td>相同</td>
+<td>-eq</td>
+<td>=</td>
+</tr>
+<tr>
+<td>不同</td>
+<td>-ne</td>
+<td>!=</td>
+</tr>
+<tr>
+<td>大于</td>
+<td>-gt</td>
+<td>&gt;</td>
+</tr>
+<tr>
+<td>小于</td>
+<td>-lt</td>
+<td>&lt;</td>
+</tr>
+<tr>
+<td>大于或等于</td>
+<td>-ge</td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>小于或等于</td>
+<td>-le</td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>为空</td>
+<td>&nbsp;</td>
+<td>-z</td>
+</tr>
+<tr>
+<td>不为空</td>
+<td>&nbsp;</td>
+<td>-n</td>
+</tr>
+</table>
+
+<p>
+比如：
+	比较字符串 a 和 b 是否相等就写作：if [ $a = $b ]
+	判断字符串 a 是否为空就写作： if [ -z $a ]
+	判断整数变量 a 是否大于 b 就写作：if [ $a -gt $b ]
+更细致的文档推荐在字符串比较时尽量不要使用 -n,而用 ! -z 来代替.
+(其中符号"!" 表示求反操作)
+</p>
+
+<ul>
+<li>
+文件变量. 如 if[-x /root] 用于判断/root目录是否可以被当前用户进入
+</li>
+</ul>
+ 
+<table>
+<tr>
+<th>运算符</th>
+<th>含义（ 满足下面要求时返回 TRUE ）</th>
+</tr>
+<tr>
+<td>-e file</td>
+<td>文件 file 已经存在</td>
+</tr>
+<tr>
+<td>-f file</td>
+<td>文件 file 是普通文件</td>
+</tr>
+<tr>
+<td>-s file</td>
+<td>文件 file 大小不为零</td>
+</tr>
+<tr>
+<td>-d file</td>
+<td>文件 file 是一个目录</td>
+</tr>
+<tr>
+<td>-r file</td>
+<td>文件 file 对当前用户可以读取</td>
+</tr>
+<tr>
+<td>-w file</td>
+<td>文件 file 对当前用户可以写入</td>
+</tr>
+<tr>
+<td>-x file</td>
+<td>文件 file 对当前用户可以执行</td>
+</tr>
+<tr>
+<td>-g file</td>
+<td>文件 file 的 GID 标志被设置</td>
+</tr>
+<tr>
+<td>-u file</td>
+<td>文件 file 的 UID 标志被设置</td>
+</tr>
+<tr>
+<td>-O file</td>
+<td>文件 file 是属于当前用户的</td>
+</tr>
+<tr>
+<td>-G file</td>
+<td>文件 file 的组 ID 和当前用户相同</td>
+</tr>
+<tr>
+<td>file1 -nt file2</td>
+<td>文件 file1 比 file2 更新</td>
+</tr>
+<tr>
+<td>file1 -ot file2</td>
+<td>文件 file1 比 file2 更老</td>
+</tr>
+</table>
+
+<ul>
+<li>
+在BASH中如果一个变量被使用了, 则该变量一直有效. 变量首次被赋初值时加上local
+<br />  关键字就可以声明为一个局部变量.
+</li>
+</ul>
+
+<h3 id="toc_0.1.1">BASH中变量与C语言中变量的区别</h3>
+<ol>
+<li>
+BASH中的变量在引用时都需要在变量前加上"$"符号
+<br />  (第一次赋值及在For循环的头部不用加"$"符号);
+</li>
+<li>
+BASH中没有浮点运算,因此也就没有浮点类型的变量可用;
+</li>
+<li>
+BASH中的整形变量的比较符号与C语言中完全不同,而且整形变量的算术运算也需要经
+<br />  过let或expr语句来处理;
+</li>
+</ol>
+  
+
+<h2 id="toc_0.2">BASH中基本流程控制语法</h2>
+
+<h3 id="toc_0.2.1">if ... then ... else</h3>
+<ul>
+<li>
+如果将 if then 写在一行里, 必须在then前面加分号. 如if [ expression ]; then 
+</li>
+<li>
+[ expression ] 里中括号与expression之间隔一个空格
+</li>
+</ul>
+
+<pre>
+if [ expression ]
+then
+　　statments
+fi
+</pre>
+<p>
+或者
+</p>
+<pre>
+if [ expression ]
+then
+　　statments
+else
+　　statments
+fi
+</pre>
+<p>
+或者
+</p>
+<pre>
+if [ expression ]
+then
+　　statments
+else if [ expression ]
+　　then 
+　　　　statments
+　　else
+　　　　statments 
+fi
+</pre>
+<p>
+或者
+</p>
+<pre>
+if [ expression ]
+then
+　　statments
+elif [ expression ]
+　　then
+　　　　statments
+　　else
+　　　　statments
+fi
+</pre>
+  
+<h3 id="toc_0.2.2">for</h3>
+
+<ul>
+<li>
+基本结构
+<pre>
+	for $var in [list]
+	do
+		statments
+	done
+</pre>
+</li>
+<ul>
+<li>
+$var是循环控制变量
+</li>
+<li>
+[list]是$var要遍历的一个集合
+</li>
+<li>
+do/done包含了循环体
+</li>
+<li>
+如果do与for写在同一行, 则do前面要加上分号
+<pre>
+	for param
+	do
+		echo $param
+	done
+</pre>
+</li>
+</ul>
+</ul>
+<p>
+param 将取遍命令行所有参数
+</p>
+
+<h3 id="toc_0.2.3">while</h3>
+<pre>
+	while [ condition ]
+	do 
+		statments
+	done
+</pre>
+<p>
+例子:
+</p>
+<pre>
+	day=$1
+	while [ $day -gt 0 ]
+	do
+		echo $day
+		let "day=$day - 1"
+	done
+</pre>
+
+<h3 id="toc_0.2.4">until</h3>
+<pre>
+	until [ condition is TRUE ]
+	do 
+		statments
+	done
+</pre>
+<p>
+  例子
+</p>
+<pre>
+	day=$1
+	until [ $day -eq 0 ]
+	do
+		echo $day
+		let "day=$day - 1"
+	done
+</pre>
+
+<h3 id="toc_0.2.5">case</h3>
+
+<pre>
+case "$var" in
+	condition1)
+		statments1;;
+	condition2)
+		statments2;;
+	...
+	*)
+	default statments;;
+esac
+</pre>
+<p>
+例子:
+</p>
+<pre>
+#!/bin/sh
+echo "Hit a key, then hit return."
+read Keypress
+
+case "$Keypress" in 
+	[a-z]) echo "Lowercase letter";;
+	[A-Z]) echo "Uppercase letter";;
+	[0-9]) echo "Digit";;
+	*) echo "Punctuation, whitespace, or other";;
+esac
+
+exit 0
+</pre>
+
+<h2 id="toc_0.3">函数的使用</h2>
+
+<pre>
+function my_funcname {
+	code block
+}
+</pre>
+<p>
+或者
+</p>
+<pre>
+my_funcname() {
+	code block
+}
+</pre>
+<p>
+例子
+</p>
+<pre>
+#!/bin/bash 
+
+square() { 
+　let "res = $1 * $1" 
+　return $res 
+} 
+
+square $1 
+result=$? 
+echo $result 
+
+exit 0
+</pre>
+
+</body>
+</html>

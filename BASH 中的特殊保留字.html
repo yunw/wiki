@@ -1,0 +1,117 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>BASH 中的特殊保留字</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+
+<h2 id="toc_0.1">保留变量</h2>
+
+<p>
+BASH 中有一些保留变量，下面列出了一些：
+</p>
+
+<p>
+$IFS　　这个变量中保存了用于分割输入参数的分割字符,默认是空格.
+$HOME 　这个变量中存储了当前用户的根目录路径. 
+$PATH 　这个变量中存储了当前 Shell 的默认路径字符串.
+$PS1　　表示第一个系统提示符.
+$PS2　　表示第二个系统提示符.
+$PWD　　表示当前工作路径.
+$EDITOR 表示系统的默认编辑器名称.
+$BASH 　表示当前 Shell 的路径字符串.
+$0, $1, $2, ... 
+　　　　表示系统传给脚本程序或脚本程序传给函数的第0个,第一个,第二个等参数.
+$#　　　表示脚本程序的命令参数个数或函数的参数个数.
+$$　　　表示该脚本程序的进程号，常用于生成文件名唯一的临时文件.
+$?　　　表示脚本程序或函数的返回状态值，正常为 0，否则为非零的错误号.
+$*　　　表示所有的脚本参数或函数参数.
+$@　　　和 $* 涵义相似，但是比 $* 更安全.
+$!　　　表示最近一个在后台运行的进程的进程号.
+</p>
+
+
+<h2 id="toc_0.2">随机数</h2>
+
+<p>
+随机数是经常要用到的,BASH 中也提供了这个功能,请看下面这个程序:
+</p>
+
+<pre>
+#!/bin/bash 
+# Prints different random integer from 1 to 65536 
+
+a=$RANDOM 
+echo $a 
+
+exit 0
+</pre>
+
+<p>
+这个程序可以在每次执行的时候随机的打印出一个大小在 1 到 65536 之间的整数.
+</p>
+
+<h2 id="toc_0.3">运算符</h2>
+
+<h3 id="toc_0.3.1">算术运算符</h3>
+<p>
++ - * / % 表示加减乘除和取余运算
++= -= *= /= 同 C 语言中的含义
+</p>
+
+<h3 id="toc_0.3.2">位操作符</h3>
+<p>
+&lt;&lt; &lt;&lt;= &gt;&gt; &gt;&gt;= 表示位左右移一位操作
+&amp; &amp;= | |= 表示按位与、位或操作
+~ ! 表示非操作
+<sup><small> </small></sup>= 表示异或操作
+</p>
+
+<h3 id="toc_0.3.3">关系运算符</h3>
+<p>
+&lt; &gt; &lt;= &gt;= == != 表示大于、小于、大于等于、小于等于、等于、不等于操作
+&amp;&amp; || 逻辑与、逻辑或操作
+</p>
+
+ 
+
+<h2 id="toc_0.4">变量的特殊操作</h2>
+
+<p>
+BASH 中还有一些对变量的简洁、快速的操作，大家还记得 "${var}" 和 "$var" 同样是
+对变量的引用吧，对 ${var} 进行一些变化就可以产生一些新功能：
+${var-default} 表示如果变量 $var 还没有设置，则保持 $var 没有设置的状态，并返回后面的默认值 default。
+${var=default} 表示如果变量 $var 还没有设置，则取后面的默认值 default。 
+${var+otherwise} 表示如果变量 $var 已经设置，则返回 otherwise 的值，否则返回空( null )。
+${var?err_msg} 表示如果变量 $var 已经设置，则返回该变量的值，否则将后面的 err_msg 输出到标准错误输出上。
+</p>
+
+<p>
+请同学们自己尝试下面的例子：
+</p>
+
+<pre>
+#!/bin/bash
+
+echo ${var?There is an error}
+
+exit 0
+</pre>
+
+<p>
+还有下面一些用法，这些用法主要用于从文件路径字符串中提取有用信息：
+${var#pattern}, ${var##pattern} 用于从变量 $var 中剥去最短（最长）的和 pattern 相匹配的最左侧的串。
+${var%pattern}, ${var%%pattern} 用于从变量 $var 中剥去最短（最长）的和 pattern 相匹配的最右侧的串。
+</p>
+
+<p>
+另外 BASH 2 中还加入下面一些操作：
+${var:pos} 表示去掉变量 $var 中前 pos 个字符。
+${var:pos:len} 表示变量 $var 中去掉前 pos 个字符后的剩余字符串的前 len 个字符。
+${var/pattern/replacement} 表示将变量 $var 中第一个出现的 pattern 模式替换为 replacement 字符串。
+${var//pattern/replacement} 表示将变量 $var 中出现的所有 pattern 模式全部都替换为 replacment 字符串。
+</p>
+
+</body>
+</html>
