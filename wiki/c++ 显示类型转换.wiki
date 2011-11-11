@@ -1,0 +1,9 @@
+
+
+- 显示的类型转换常被称作 _*强制*_
+
+- *static_cast* 完成相关类型之间的转换
+- *reinterpret_cast* 处理互不相关的类型之间的转换
+- *dynamic_cast* 运行时检查的转换
+- *const_cast* 清除 const 和 volatile 限定符的转换
+
