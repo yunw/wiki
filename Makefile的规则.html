@@ -1,0 +1,244 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>Makefile的规则</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+
+<p>
+<a href="http://www.linuxsir.org/main/doc/gnumake/GNUmake_v3.80-zh_CN_html/make-04.html">http://www.linuxsir.org/main/doc/gnumake/GNUmake_v3.80-zh_CN_html/make-04.html</a>
+</p>
+
+<h2 id="toc_0.1">规则语法</h2>
+
+<p>
+TARGETS: PREREQUISITES
+	COMMAND
+	...
+或者
+</p>
+
+<p>
+TARGETS: PREREQUISITES; COMMAND
+	COMMAND
+	...
+</p>
+
+<ul>
+<li>
+当命令行作为独立行时必须以[TAB]字符开始。在第一个规则之后出现的所有以[TAB]字符开始的行都会被当作命令行来处理。
+</li>
+<li>
+Makefile中'$'表示变量或函数的引用，在规则中需要使用'$'的地方，需要书写两个连续的'$$'。
+</li>
+<li>
+执行规则命令的条件是以下两者之一：
+</li>
+<ol>
+<li>
+目标文件不存在
+</li>
+<li>
+目标文件存在，但规则中依赖文件中的任何一个比目标文件更新(近最后修改时间来比较)。
+</li>
+</ol>
+</ul>
+	
+<h2 id="toc_0.2">依赖</h2>
+
+<p>
+有两种依赖类型：
+</p>
+<ol>
+<li>
+常规依赖
+</li>
+<li>
+order-only 依赖
+<br />	有时需要定义这样一个规则：目标的重建只由依赖文件中的部分来决定，而不是任一个依赖文件更新后都需要重建目标。
+<br />	这种依赖文件称为 order-only 依赖。书写格式如下：
+</li>
+</ol>
+
+<p>
+	TARGETS： NORMAL-PREREQUISITES|ORDER-ONLY-PREREQUISITES
+</p>
+
+<p>
+	管道符号'|'左边的是常规依赖，右边的是 order-only 依赖。这样的依赖关系中中常规依赖可是是空。
+举例：
+</p>
+<pre>
+LIBS=libtest.a
+foo:foo.c|$(LIBS)
+	$(CC) $(CFLAGS) $&lt; -o $@ $(LIBS)
+</pre>
+  
+<h2 id="toc_0.3">文件名通配符</h2>
+
+<p>
+Makefile中通配符只使用在以下两种场合：
+</p>
+<ol>
+<li>
+规则目标、依赖中，make 在读取 Makefile 时会进行匹配处理(通配符展开)。
+</li>
+<li>
+规则命令中，通配符的通配处理是在 shell 执行此条命令时完成的。
+</li>
+</ol>
+
+<p>
+除以上两种场合外，不能直接使用通配符，而需要通过 wildcard 函数实现。
+</p>
+<pre>
+objects = *.o
+表示变量 objects 的值是字符串 "*.o"
+
+objects = $(wildcard *.o)
+此时objects表示当前目录下的所有 .o 文件。
+</pre>
+  
+<p>
+一个实际的例子：
+</p>
+<pre>
+objects := $(patsubst %.c,%.o,$(wildcard *.c))
+
+ foo : $(objects)
+ 	$(CC) -o foo $(objects)
+</pre>
+  
+
+<h2 id="toc_0.4">目录搜索</h2>
+
+<p>
+变量 VPATH 可以指定依赖文件的搜索路径，当规则的依赖文件在当前目录不存在时，make 会在此变量所指定的目录下去寻找这些依赖文件。
+通常都用此变量来指定规则的依赖文件的搜索路径。
+</p>
+
+<p>
+关键字 vpath 与 变量VPATH 功能类似，但更为灵活，使用方法有三种：
+</p>
+
+<ul>
+<li>
+vpath PATTERN DIRECTORIES
+<br />  为所有符合模式 PATTERN 的文件指定搜索目录 DIRECTORIES。多个目录使用 ':' 隔开。
+</li>
+</ul>
+  
+<ul>
+<li>
+vpath PATTERN
+<br />  清除之前为符全 PATTERN 的文件设置的搜索路径。
+</li>
+</ul>
+
+<ul>
+<li>
+vpath
+<br />  清除所有已被设置的文件搜索路径。
+</li>
+</ul>
+  
+<pre>
+	vpath %.h ../headers
+
+	Makefile 中出现的 .h 文件，如果不能在当前目录下找到，则到 ../headers 下寻找。
+	这里只指示 Makefile 中出现的 .h 文件，并不能指示源文件中包含的 .h 文件的搜索路径。
+</pre>
+  
+<h2 id="toc_0.5">伪目标</h2>
+
+<p>
+伪目标，它不代表一个真正的目标文件名，在执行 make 时可以指定这个目标来执行其所在规则定义的命令。伪目标也称为标签。
+</p>
+
+<pre>
+clean:
+	rm *.o
+
+当前工作目录下有与伪目标名相同的文件(存在名为clean的文件)时，由于clean文件是最新，所以
+伪目标 clean 下的命令行将不会被执行。使用 .PHONY 声明伪目标可以避免这种问题。
+</pre>
+
+<p>
+使用伪目标实现这样一个功能：进入指定子目录中执行命令，遇到错误后会立即退出。
+</p>
+
+<pre>
+SUBDIRS := foo bar baz
+
+.PHONY: subdirs $(SUBDIRS)
+
+subdirs: $(SUBDIRS)
+
+$(SUBDIRS):
+	$(MAKE) -C $@
+	
+foo:baz
+
+最后一行的作用是保证 baz 目录比 foo 先处理。
+</pre>
+
+<h2 id="toc_0.6">多目标</h2>
+
+<p>
+一个规则中可以有多个目标，规则所定义的命令对所有目标有效。具有多目标的规则相当于多个规则，所有目标具有相同的依赖文件。
+多目标通常使用在以下两种场合：
+</p>
+
+<ul>
+<li>
+仅需要一个描述依赖的规则，不需要在规则中定义命令，如：
+<pre>
+	kdb.o command.o files.o: command.h
+</pre>
+</li>
+</ul>
+    
+<ul>
+<li>
+多个具有类似重建命令的目标，使用自动变量 $@ 来引用具体目标
+<pre>
+	bigoutput littleoutput: text.g
+   	generate text.g -$(subst output,$@) &gt; $@
+   	
+	这相当于
+	bigoutput : text.g
+generate text.g -big &gt; bigoutput
+	littleoutput : text.g
+generate text.g -little &gt; littleoutput
+</pre>
+</li>
+</ul>
+    
+<p>
+但是多目标的规则并不能做到根据目标文件自动修改依赖文件。
+</p>
+
+<h2 id="toc_0.7">静态模式</h2>
+
+<p>
+静态模式规则：规则存在多个目标，并且不同的目标可以根据目标文件的名字构造出依赖文件。
+</p>
+
+<p>
+TARGETS ... : TARGET-PATTERN: PREREQ-PATTERN ...
+	COMMANDS
+	...
+</p>
+
+<pre>
+objects = foo.o bar.o
+ 
+all: $(objects)
+ 
+$(objects): %.o: %.c
+	$(CC) -c $(CFLAGS) $&lt; -o $@
+</pre>
+
+</body>
+</html>

@@ -1,7 +1,5 @@
 
-- [[字符编码知识encoding]]
- 
- == Bash ==
+== Bash ==
  
 - [[Bash基础知识]]
 - [[Bash 基本语法]]
@@ -17,12 +15,17 @@
 
 == Makefile ==
 
+- [http://www.linuxsir.org/main/doc/gnumake/GNUmake_v3.80-zh_CN_html/index.html#content GNU make中文手册]
+
+- [[Makefile的规则]]
 
 == misc ==
 
+- [[字符编码知识encoding]]
+
 - 查内存泄漏
 
-  valgrind --tool=memcheck --leak-check=full
+    valgrind --tool=memcheck --leak-check=full
   
 - 格式化代码
   * indent -orig -i8 xxx.c   Berkely风格
