@@ -17,6 +17,8 @@
 
 - [[adroid bootup log]]
 
+- [[mx53-smd-android]]
+
 == 深入 ==
 
 - [[android makefile 分析]]
@@ -27,3 +29,12 @@
 
 - [[Android Display System]]
 
+- [[Android Power Management]]
+
+== jj07 ==
+
+- [[mx53-cscope-files]]
+
+- [[jj07开发文档]]
+
+- [[PMIC-DA9053]]

@@ -2,9 +2,23 @@
 <head>
 <link rel="Stylesheet" type="text/css" href="style.css" />
 <title>android makefile 分析</title>
-<meta http-equiv="Content-Type" content="text/html; charset=" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 </head>
 <body>
+<h2 id="toc_0.1">m/mm/mmm</h2>
+
+<ul>
+<li>
+m:       Makes from the top of the tree.
+</li>
+<li>
+mm:      Builds all of the modules in the current directory.
+</li>
+<li>
+mmm:     Builds all of the modules in the supplied directories.
+</li>
+</ul>
+
 
 <p>
 target/product/generic.mk
@@ -14,13 +28,13 @@ target/product/generic.mk
 PRODUCT_DEVICE
 </p>
 
-<h2 id="toc_0.1">core/product_config.mk</h2>
+<h2 id="toc_0.2">core/product_config.mk</h2>
 
 <p>
 TARGET_DEVICE := generic
 </p>
 
-<h2 id="toc_0.2">core/definitions.mk</h2>
+<h2 id="toc_0.3">core/definitions.mk</h2>
 
 <p>
 ifeq ($(strip $(SHOW_COMMANDS)),)
@@ -35,7 +49,7 @@ hide :=
 endif
 </p>
 
-<h2 id="toc_0.3">core/envsetup.mk</h2>
+<h2 id="toc_0.4">core/envsetup.mk</h2>
 
 <p>
 HOST_BUILD_TYPE := release
@@ -108,7 +122,7 @@ endif
 <strong>默认是generic</strong>
 </p>
 
-<h2 id="toc_0.4">ramdisk.img 生成过程</h2>
+<h2 id="toc_0.5">ramdisk.img 生成过程</h2>
 
 <p>
 INSTALLED_RAMDISK_TARGET := $(BUILT_RAMDISK_TARGET)

@@ -2,12 +2,17 @@
 <head>
 <link rel="Stylesheet" type="text/css" href="style.css" />
 <title>android event system</title>
-<meta http-equiv="Content-Type" content="text/html; charset=" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 </head>
 <body>
 
 <p>
-从 <a href="input system.html">linux input system</a> 中可以了解到，读 /dev/input/ 下的某个设备文件即可得到我们想要的事件。
+<a href="http://blog.csdn.net/a345017062/article/details/6417929">http://blog.csdn.net/a345017062/article/details/6417929</a>
+</p>
+
+<p>
+从 <a href="linux-input-system-2.html">linux input system</a> 中可以了解到，
+读 /dev/input/ 下的某个设备文件即可得到我们想要的事件。
 </p>
 
 <p>
@@ -24,6 +29,137 @@ frameworks/base/libs/ui/EventHub.cpp
 
 <p>
 frameworks/base/services/jni/com_android_server_KeyInputQueue.cpp
+</p>
+
+
+<p>
+frameworks/base/libs/ui/EventHub.cpp
+</p>
+
+<p>
+bool InputReaderThread::threadLoop()    //InputReader.cpp
+void InputReader::loopOnce()    //InputReader.cpp
+  -&gt; bool EventHub::getEvent(RawEvent* outEvent)     //EventHub.cpp
+</p>
+
+
+
+<p>
+InputReader::process
+  -&gt; InputReader::addDevice
+</p>
+<blockquote>
+-&gt; InputReader::createDevice
+</blockquote>
+<p>
+  -&gt; InputReader::consumeEvent
+</p>
+  
+
+<pre>
+           WindowmanagerService 
+                              \ 
+                               \
+ = java ===================   InputManager
+                                   ^
+                                   |
+ = jni ===============    --&gt; com_android_server_InputManager
+                         /
+                        /       
+               InputManager
+               /        \          
+              /          \
+       InputReader     InputDispatcher
+           ^        
+           |
+        EventHub
+</pre>
+  
+<p>
+EventHub::getEvent
+将事件分为几类，DEVICE_ADDED/DEVICE_REMOVED/FINISHED_DEVICE_SCAN。扫描到的事件放入mInputBufferData
+</p>
+
+<p>
+InputReader
+拿到事件之后(InputReader::loopOnce())，根据事件类型不同处理：分别是
+</p>
+
+<pre>
+void InputReader::process(const RawEvent* rawEvent) {
+    switch (rawEvent-&gt;type) {
+    case EventHubInterface::DEVICE_ADDED:
+        addDevice(rawEvent-&gt;deviceId);
+        break;
+
+    case EventHubInterface::DEVICE_REMOVED:
+        removeDevice(rawEvent-&gt;deviceId);
+        break;
+
+    case EventHubInterface::FINISHED_DEVICE_SCAN:
+        handleConfigurationChanged(rawEvent-&gt;when);
+        break;
+
+    default:
+        consumeEvent(rawEvent);
+        break;
+    }
+}
+</pre>
+
+<p>
+addDevice 添加输入设备时，会根据输入设备的类型分为不同的classes，这与 kernel
+驱动中的设备类型呼应，都有：
+</p>
+<pre>
+INPUT_DEVICE_CLASS_KEYBOARD       /* The input device is a keyboard. */
+INPUT_DEVICE_CLASS_ALPHAKEY       /* The input device is an alpha-numeric keyboard (not just a dial pad). */
+INPUT_DEVICE_CLASS_TOUCHSCREEN    /* The input device is a touchscreen (either single-touch or multi-touch). */
+INPUT_DEVICE_CLASS_TRACKBALL      /* The input device is a trackball. */
+INPUT_DEVICE_CLASS_TOUCHSCREEN_MT /* The input device is a multi-touch touchscreen. */
+INPUT_DEVICE_CLASS_DPAD           /* The input device is a directional pad (implies keyboard, has DPAD keys). */
+INPUT_DEVICE_CLASS_GAMEPAD        /* The input device is a gamepad (implies keyboard, has BUTTON keys). */
+INPUT_DEVICE_CLASS_SWITCH         /* The input device has switches. */
+INPUT_DEVICE_CLASS_MOUSE          /* The input device is a mouse. */
+</pre>
+
+<p>
+每种class的设备都有自己的一套事件处理方法，封装为 InputMapper。
+</p>
+
+<p>
+InputReader::consumeEvent 中处理事件，会根据事件的ID拿到不同的 InputMapper, 
+然后调用不同的处理函数将事件向上发送。
+</p>
+
+
+
+
+
+
+
+
+
+<p>
+EventHub::openPlatformInput
+ --&gt; scanDir 扫描 /dev/input 目录
+</p>
+<blockquote>
+--&gt; openDevice
+打开 /dev/input/ 下的每一个文件，并用ioctrl拿到各个设备文件的信息，包括
+</blockquote>
+<blockquote>
+EVIOCGVERSION        /* get driver version */
+EVIOCGID             /* get device ID */
+EVIOCGNAME(len)      /* get device name */
+EVIOCGPHYS(len)      /* get physical location */
+EVIOCGUNIQ(len)      /* get unique identifier */
+EVIOCGBIT(ev,len)    /* get event bits */
+</blockquote>
+         
+<p>
+	并为该设备新建一个 device_t 的 device，并最后检测设备类型(class)
+	如果是键盘，还要找并加载键值映射文件
 </p>
 
 </body>

@@ -6,7 +6,36 @@
 </head>
 <body>
 
+<p>
+FramebufferNativeWindow
+</p>
+
+<p>
+hw_get_module("gralloc", &amp;module)
+</p>
+
+<p>
+1. 从环境变量中找到 "imx5x"
+2. 在 "/system/lib/hw" 和 "/vendor/lib/hw" 两个路径下
+3. 拼成 /system/lib/hw/gralloc.imx5x.so，并确认此文件存在
+4. 用 dl 函数族 load 这个动态库，并在库中找到符号"HMI"并把其地址赋给module给供返回
+</p>
+
+<p>
+framebuffer_open/gralloc_open 等操作具体硬件设备都是平台相关的，
+正因为如此才要在上面费一大圈的力气去找到对应的 module 。module 里
+就有对应平台设备操作方法的实现。
+</p>
+
+<p>
+操作完之后将信息存储在 fbDev 和 grDev 中。
+</p>
+
 <h2 id="toc_0.1">FramebufferNativeWindow</h2>
+
+<p>
+frameworks/base/libs/ui/FramebufferNativeWindow.cpp 
+</p>
 
 <pre>
     81	FramebufferNativeWindow::FramebufferNativeWindow() 

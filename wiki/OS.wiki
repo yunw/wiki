@@ -6,3 +6,5 @@
 - [[using openocd]]
 
 - [[linux 移植]]
+
+- [[Linux kernel study]]

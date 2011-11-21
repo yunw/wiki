@@ -1,5 +1,0 @@
-
-- [[sd-mmc]]
-- [[input system]]
-
-- [[Linux FrameBuffer]]
