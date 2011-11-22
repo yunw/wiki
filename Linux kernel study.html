@@ -1,0 +1,48 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>Linux kernel study</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<h2 id="toc_0.1">kernel_thread</h2>
+
+<p>
+/arch/arm/kernel/process.c
+</p>
+<pre>
+/*
+ * Create a new kernel thread
+ */
+extern int kernel_thread(int (*fn)(void *), void *arg, unsigned long flags);
+</pre>
+
+<p>
+kernel thread可以用kernel_thread创建，但是在执行函数里面必须用daemonize释放资源
+并挂到init下，还需要用completion等待这一过程的完成。 
+</p>
+
+<p>
+kernel_thread是通过do_fork来实现的。
+</p>
+
+<h2 id="toc_0.2">kthread_create</h2>
+
+<p>
+kthread_create是比较正牌的创建函数，这个不必要调用daemonize，用这个创建的kernel
+thread都挂在了kthread线程下
+</p>
+
+<p>
+kthread_create是通过work_queue来实现的
+</p>
+
+<h2 id="toc_0.3">FREEZER</h2>
+
+<p>
+Documentation/power/freezing-of-tasks.txt
+</p>
+
+</body>
+</html>

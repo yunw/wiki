@@ -21,3 +21,71 @@
 
     queue_all_property_triggers();
     drain_action_queue();
+    
+
+== main ==
+
+{{{
+    umask(0);
+  }}}
+清除 umask, 后面许多文件操作直接使用权限位，而不受 umask 的影响。
+
+{{{
+    mkdir("/dev", 0755);
+    mkdir("/proc", 0755);
+    mkdir("/sys", 0755);
+
+    mount("tmpfs", "/dev", "tmpfs", 0, "mode=0755");
+    mkdir("/dev/pts", 0755);
+    mkdir("/dev/socket", 0755);
+    mount("devpts", "/dev/pts", "devpts", 0, NULL);
+    mount("proc", "/proc", "proc", 0, NULL);
+    mount("sysfs", "/sys", "sysfs", 0, NULL);
+  }}}
+  创建最基本的目录结构，其他目录的由 init.rc 里再添加
+  
+{{{
+    open_devnull_stdio();
+    
+void open_devnull_stdio(void)
+{
+    int fd;
+    static const char *name = "/dev/__null__";
+    if (mknod(name, S_IFCHR | 0600, (1 << 8) | 3) == 0) {
+        fd = open(name, O_RDWR);
+        unlink(name);
+        if (fd >= 0) {
+            dup2(fd, 0);
+            dup2(fd, 1);
+            dup2(fd, 2);
+            if (fd > 2) {
+                close(fd);
+            }
+            return;
+        }
+    }
+
+    exit(1);
+}
+  }}}
+  
+
+{{{
+    log_init();
+    
+void log_init(void)
+{
+    static const char *name = "/dev/__kmsg__";
+    if (mknod(name, S_IFCHR | 0600, (1 << 8) | 11) == 0) {
+        log_fd = open(name, O_WRONLY);
+        fcntl(log_fd, F_SETFD, FD_CLOEXEC);
+        unlink(name);
+    }
+}
+  }}}
+  
+{{{
+    init_parse_config_file("/init.rc");
+  }}}
+  解析 /init.rc 文件，这个函数的作用是：
+

@@ -1,0 +1,23 @@
+
+代码见：
+frameworks/base/services/jni/com_android_server_BatteryService.cpp
+
+register_android_server_BatteryService 主要从 sysfs 文件系统中读取相应信息
+
+kernel 将电源相关的信息放在 /sys/class/power_supply 路径下
+
+该目录下有 ac/battery 两个目录，根据其中的类型 type 来确定各信息的位置。
+
+gFieldIds 负责记录有关电源的信息：
+
+# mAcOnline;
+# mUsbOnline;
+# mBatteryStatus;
+# mBatteryHealth;
+# mBatteryPresent;
+# mBatteryLevel;
+# mBatteryVoltage;
+# mBatteryTemperature;
+# mBatteryTechnology;
+
+

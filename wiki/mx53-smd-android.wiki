@@ -1,0 +1,11 @@
+
+== nfs挂载 ==
+
+将 init.freescale.rc 中的 mount 动作全部注释
+注释 init.rc 中的 rootfs remount ，否则启动会有错误
+    
+== 改变旋转方向 ==
+注释 init.freescale.rc 中下面这一行
+{{{
+    setprop ro.sf.hwrotation 270
+}}}

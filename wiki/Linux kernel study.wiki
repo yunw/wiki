@@ -1,0 +1,28 @@
+
+== kernel_thread ==
+
+/arch/arm/kernel/process.c
+{{{
+/*
+ * Create a new kernel thread
+ */
+extern int kernel_thread(int (*fn)(void *), void *arg, unsigned long flags);
+}}}
+
+kernel thread可以用kernel_thread创建，但是在执行函数里面必须用daemonize释放资源
+并挂到init下，还需要用completion等待这一过程的完成。 
+
+kernel_thread是通过do_fork来实现的。
+
+== kthread_create ==
+
+kthread_create是比较正牌的创建函数，这个不必要调用daemonize，用这个创建的kernel
+thread都挂在了kthread线程下
+
+kthread_create是通过work_queue来实现的
+
+== FREEZER ==
+
+Documentation/power/freezing-of-tasks.txt
+
+

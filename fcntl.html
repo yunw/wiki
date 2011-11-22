@@ -1,0 +1,68 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>fcntl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+
+<pre>
+#include &lt;unistd.h&gt;
+#include &lt;fcntl.h&gt;
+
+int fcntl(int fd, int cmd, ... /* arg */);
+</pre>
+  
+<p>
+fcntl 在 fd 上根据 cmd 执行以下操作之一：
+</p>
+
+<ul>
+<li>
+复制一个文件描述符
+</li>
+</ul>
+
+<p>
+  F_DUPFD (long)
+  	在大于或等于 arg 的范围里找到最小的有效文件描述符，并用其复制 fd (dup2要指定描述符)。
+  	成功返回新的描述符。
+</p>
+  	
+<p>
+  F_DUPFD_CLOEXEC (long)
+  	同 F_DUPFD, 但在最后会在新描述符上设置 close-on-exec 标志(O_CLOEXEC)。
+	这个标志的意思是当调用 execve 函数成功后，文件描述符将自动关闭。
+</p>
+	
+<ul>
+<li>
+文件描述符标志
+<br />  下面两个cmd用来操作描述符的标志，当前只定义了一个标志：FD_CLOEXEC。
+</li>
+</ul>
+
+<p>
+  F_GETFD (void)
+  F_SETFD (long)
+</p>
+  
+<ul>
+<li>
+文件状态标志
+<br />  每个文件描述符都关连着一些(open 打开文件时初始化的或fcntl修改的)状态标志，
+</li>
+</ul>
+  
+<p>
+  F_GETFL (void)
+  F_SETFL (long)
+  	O_APPEND, O_ASYNC, O_DIRECT, O_NOATIME, O_NONBLOCK
+</p>
+  	
+<p>
+ ... 	
+</p>
+
+</body>
+</html>

@@ -1,0 +1,60 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>linux-input-system-1</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+
+<h2 id="toc_0.1">input-event</h2>
+
+<p>
+include/linux/input.h
+Documentation/input/input.txt
+</p>
+
+<pre>
+struct input_event {
+	struct timeval time;
+	__u16 type;
+	__u16 code;
+	__s32 value;
+};
+</pre>
+
+<ul>
+<li>
+'time' is the timestamp, it returns the time at which the event happened.
+</li>
+</ul>
+
+<ul>
+<li>
+type is for example EV_REL for relative moment, EV_KEY for a keypress or
+</li>
+</ul>
+<p>
+release. More types are defined in include/linux/input.h.
+</p>
+ 
+<ul>
+<li>
+'code' is event code, for example REL_X or KEY_BACKSPACE, again a complete
+</li>
+</ul>
+<p>
+list is in include/linux/input.h.
+</p>
+  
+<ul>
+<li>
+'value' is the value the event carries. Either a relative change for
+</li>
+</ul>
+<p>
+EV_REL, absolute new value for EV_ABS (joysticks ...), or 0 for EV_KEY for
+release, 1 for keypress and 2 for autorepeat.
+</p>
+
+</body>
+</html>

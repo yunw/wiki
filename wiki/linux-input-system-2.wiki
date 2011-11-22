@@ -1,0 +1,314 @@
+== Event types ==
+
+#define EV_SYN			0x00 //同步事件
+#define EV_KEY			0x01 //按键事件
+#define EV_REL			0x02 //相对坐标(如：鼠标移动，报告相对最后一次位置的位移)
+#define EV_ABS			0x03 //绝对坐标(如：触摸屏)
+#define EV_MSC			0x04 //其它
+#define EV_SW			0x05 
+#define EV_LED			0x11 //LED
+#define EV_SND			0x12 //声音
+#define EV_REP			0x14 //重复事件
+#define EV_FF			0x15 //力反馈
+#define EV_PWR			0x16
+#define EV_FF_STATUS		0x17
+#define EV_MAX			0x1f
+#define EV_CNT			(EV_MAX+1)
+
+== input_register_device ==
+
+/drivers/input/input.c
+
+{{{
+  1402	int input_register_device(struct input_dev *dev)
+  1403	{
+  1404		static atomic_t input_no = ATOMIC_INIT(0);
+  1405		struct input_handler *handler;
+  1406		const char *path;
+  1407		int error;
+  1408	
+  1409		__set_bit(EV_SYN, dev->evbit);
+  
+  任何设备都默认支持同步事件。
+  
+  1410	
+  1411		/*
+  1412		 * If delay and period are pre-set by the driver, then autorepeating
+  1413		 * is handled by the driver itself and we don't do it in input.c.
+  1414		 */
+  1415	
+  1416		init_timer(&dev->timer);
+  1417		if (!dev->rep[REP_DELAY] && !dev->rep[REP_PERIOD]) {
+  1418			dev->timer.data = (long) dev;
+  1419			dev->timer.function = input_repeat_key;
+  1420			dev->rep[REP_DELAY] = 250;
+  1421			dev->rep[REP_PERIOD] = 33;
+  1422		}
+  
+  初始化设备连击计时器，如果之前没有填写连接参数就使用这里的默认值
+  
+  1423	
+  1424		if (!dev->getkeycode)
+  1425			dev->getkeycode = input_default_getkeycode;
+  1426	
+  1427		if (!dev->setkeycode)
+  1428			dev->setkeycode = input_default_setkeycode;
+  
+  如果设备没有查看和修改映射的函数，则使用默认函数
+
+  1429	
+  1430		dev_set_name(&dev->dev, "input%ld",
+  1431			     (unsigned long) atomic_inc_return(&input_no) - 1);
+  1432	
+  1433		error = device_add(&dev->dev);
+  1434		if (error)
+  1435			return error;
+  1436	
+  1437		path = kobject_get_path(&dev->dev.kobj, GFP_KERNEL);
+  1438		printk(KERN_INFO "input: %s as %s\n",
+  1439			dev->name ? dev->name : "Unspecified device", path ? path : "N/A");
+  1440		kfree(path);
+  
+  查看dmesg，可以发现kernel启动时打印了下面两句：
+	input: mxs-kbd as /class/input/input0
+	input: MXS touchscreen as /class/input/input1
+
+  1441	
+  1442		error = mutex_lock_interruptible(&input_mutex);
+  1443		if (error) {
+  1444			device_del(&dev->dev);
+  1445			return error;
+  1446		}
+  1447	
+  1448		list_add_tail(&dev->node, &input_dev_list);
+  
+  把设备加到全局输入设备链表中
+
+  1449	
+  1450		list_for_each_entry(handler, &input_handler_list, node)
+  1451			input_attach_handler(dev, handler);
+  
+  将本设备与已存在的handler进行id(input_device_id)匹配，如果匹配则与该handler进行连接
+  设备可能与多个handler进行连接，这样此设备产生的事件将发给所有的handler
+  
+  1452	
+  1453		input_wakeup_procfs_readers();
+  1454	
+  1455		mutex_unlock(&input_mutex);
+  1456	
+  1457		return 0;
+  1458	}
+}}}
+  
+== input_attach_handler ==
+
+/drivers/input/input.c
+
+{{{
+   737	static int input_attach_handler(struct input_dev *dev, struct input_handler *handler)
+   738	{
+   739		const struct input_device_id *id;
+   740		int error;
+   741	
+   742		if (handler->blacklist && input_match_device(handler->blacklist, dev))
+   743			return -ENODEV;
+   
+   如果dev在handler的禁止连接设备列表中，则退出
+   
+   744	
+   745		id = input_match_device(handler->id_table, dev);
+   746		if (!id)
+   747			return -ENODEV;
+   
+   在handler支持设备列表中找到匹配dev的id，如果找不到，则退出。找到了就进行连接。
+   
+   748	
+   749		error = handler->connect(handler, dev, id);
+   750		if (error && error != -ENODEV)
+   751			printk(KERN_ERR
+   752				"input: failed to attach handler %s to device %s, "
+   753				"error: %d\n",
+   754				handler->name, kobject_name(&dev->dev.kobj), error);
+   755	
+   756		return error;
+   757	}
+}}}   
+
+== input_match_device ==
+
+/drivers/input/input.c
+
+{{{
+   691	#define MATCH_BIT(bit, max) \
+   692			for (i = 0; i < BITS_TO_LONGS(max); i++) \
+   693				if ((id->bit[i] & dev->bit[i]) != id->bit[i]) \
+   694					break; \
+   695			if (i != BITS_TO_LONGS(max)) \
+   696				continue;
+   
+   BITS_TO_LONGS(nr) 表示nr占多少个long，向上对齐。如0x1f=31, long为32bits,
+   则31占1个long。比如我们需要long上置标志，每个bit表示一个标志。但有时候标志
+   太多了会需要占掉多个long。这里用 BITS_TO_LONGS 这类的宏来处理这种情况。
+   
+   如果上面 ((id->bit[i] & dev->bit[i]) != id->bit[i]) 成立，则说明dev->bit[i]不完全支持id->bit[i]
+   当匹配时,上面第一个if必然不成立，于是for循环会继续比较下一个long。
+
+   最后如果bit里面的标志都匹配了，就表示此标志检查通过。
+   
+   697	
+   698	static const struct input_device_id *input_match_device(const struct input_device_id *id,
+   699								struct input_dev *dev)
+   700	{
+   701		int i;
+   702	
+   
+   id->flags中记录了一些域的标志，如果该标志置位则表示id与dev匹配时必须检查这些域
+   
+   703		for (; id->flags || id->driver_info; id++) {
+   704	
+   705			if (id->flags & INPUT_DEVICE_ID_MATCH_BUS)
+   706				if (id->bustype != dev->id.bustype)
+   707					continue;
+   708	
+   709			if (id->flags & INPUT_DEVICE_ID_MATCH_VENDOR)
+   710				if (id->vendor != dev->id.vendor)
+   711					continue;
+   712	
+   713			if (id->flags & INPUT_DEVICE_ID_MATCH_PRODUCT)
+   714				if (id->product != dev->id.product)
+   715					continue;
+   716	
+   717			if (id->flags & INPUT_DEVICE_ID_MATCH_VERSION)
+   718				if (id->version != dev->id.version)
+   719					continue;
+   720	
+   721			MATCH_BIT(evbit,  EV_MAX);
+   722			MATCH_BIT(keybit, KEY_MAX);
+   723			MATCH_BIT(relbit, REL_MAX);
+   724			MATCH_BIT(absbit, ABS_MAX);
+   725			MATCH_BIT(mscbit, MSC_MAX);
+   726			MATCH_BIT(ledbit, LED_MAX);
+   727			MATCH_BIT(sndbit, SND_MAX);
+   728			MATCH_BIT(ffbit,  FF_MAX);
+   729			MATCH_BIT(swbit,  SW_MAX);
+   
+   见上面MATCH_BIT的说明
+   
+   730	
+   731			return id;
+   732		}
+   733	
+   734		return NULL;
+   735	}
+   
+   如果某个handler的id除了id->driver_info之外的域都为0，
+   那么此handler可以和任意dev匹配。
+   实际上drivers/input/evdev.c中就是这么初始化id的。
+ 
+}}}
+
+== input_event ==
+
+input_event()
+	-> input_handle_event()
+		-> dev->event() 设备回调
+		-> input_pass_event()
+		
+
+    89	static void input_pass_event(struct input_dev *dev,
+    90				     unsigned int type, unsigned int code, int value)
+    91	{
+    92		struct input_handle *handle;
+    93	
+    94		rcu_read_lock();
+    95	
+    96		handle = rcu_dereference(dev->grab);
+    97		if (handle)
+    98			handle->handler->event(handle, type, code, value);
+    
+    如果dev被某handle独占，则事件只发给此handle
+    
+    99		else
+   100			list_for_each_entry_rcu(handle, &dev->h_list, d_node)
+   101				if (handle->open)
+   102					handle->handler->event(handle,
+   103								type, code, value);
+   
+   否则遍历所有与dev连接的handle，如果该handle被打开(input_open_device)，则发送事件
+   
+   104		rcu_read_unlock();
+   105	}
+   
+
+== evdev_connect ==
+
+/drivers/input/evdev.c
+
+{{{
+   790	static int evdev_connect(struct input_handler *handler, struct input_dev *dev,
+   791				 const struct input_device_id *id)
+   792	{
+   793		struct evdev *evdev;
+   794		int minor;
+   795		int error;
+   796	
+   797		for (minor = 0; minor < EVDEV_MINORS; minor++)
+   798			if (!evdev_table[minor])
+   799				break;
+   800	
+   801		if (minor == EVDEV_MINORS) {
+   802			printk(KERN_ERR "evdev: no more free evdev devices\n");
+   803			return -ENFILE;
+   804		}
+   
+   最多只支持32个次设备号。
+   
+   805	
+   806		evdev = kzalloc(sizeof(struct evdev), GFP_KERNEL);
+   807		if (!evdev)
+   808			return -ENOMEM;
+   809	
+   810		INIT_LIST_HEAD(&evdev->client_list);
+   811		spin_lock_init(&evdev->client_lock);
+   812		mutex_init(&evdev->mutex);
+   813		init_waitqueue_head(&evdev->wait);
+   814	
+   815		dev_set_name(&evdev->dev, "event%d", minor);
+   816		evdev->exist = 1;
+   817		evdev->minor = minor;
+   818	
+   819		evdev->handle.dev = input_get_device(dev);
+   820		evdev->handle.name = dev_name(&evdev->dev);
+   821		evdev->handle.handler = handler;
+   822		evdev->handle.private = evdev;
+   823	
+   824		evdev->dev.devt = MKDEV(INPUT_MAJOR, EVDEV_MINOR_BASE + minor);
+   825		evdev->dev.class = &input_class;
+   826		evdev->dev.parent = &dev->dev;
+   827		evdev->dev.release = evdev_free;
+   828		device_initialize(&evdev->dev);
+   829	
+   830		error = input_register_handle(&evdev->handle);
+   831		if (error)
+   832			goto err_free_evdev;
+   833	
+   834		error = evdev_install_chrdev(evdev);
+   835		if (error)
+   836			goto err_unregister_handle;
+   837	
+   838		error = device_add(&evdev->dev);
+   839		if (error)
+   840			goto err_cleanup_evdev;
+   841	
+   842		return 0;
+   843	
+   844	 err_cleanup_evdev:
+   845		evdev_cleanup(evdev);
+   846	 err_unregister_handle:
+   847		input_unregister_handle(&evdev->handle);
+   848	 err_free_evdev:
+   849		put_device(&evdev->dev);
+   850		return error;
+   851	}
+}}}
+

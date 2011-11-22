@@ -1,0 +1,22 @@
+
+DA9053 提供了一个10位分辨率的模数转换器(ADC)，同时提供了跟踪保持电路，电路中还
+结合了一个模拟输入复用器，允许最多10路通道的转换。跟踪保持电路保证了AD转换过程
+时有稳定的输入电压。
+
+ADC 可用于如下输入：
+
+* Channel 0: VDDOUT - 测量系统电压
+* Channel 1: ICH - 内部电池充电检测
+* Channel 2: TBAT - 电池 NTC 输出
+* Channel 3: VBAT - 电池电压检测
+* Channel 4: ADC_IN4 - 高阻抗输入
+* Channel 5: ADC_IN5 - 高阻抗输入
+* Channel 6: ADC_IN6 - 高阻抗输入 (输入分压器)
+* Channel 7: XY-TSI - 触摸屏的XY轴电压
+* Channel 8: Tjunc-Sense - 内部温度传感器
+* Channel 9: VBBAT - 备用电池电压检测
+
+
+- [[da9053-touchscreen]]
+
+

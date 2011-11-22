@@ -1,0 +1,140 @@
+
+ = JJ07 项目开发 FAQ =
+
+ %toc
+
+== 本文档是做什么的？ ==
+
+本篇介绍 JJ07 项目开发的主要工作流程，以及如何使用 repo 和 git 进行同步开发。
+
+== 什么是 JJ07 ？ ==
+
+JJ07 是一个 Android 项目。...
+
+代码位于 192.168.40.50:h:/project_repo/JJ07-1/android_mirror
+
+== 获取源码前要做哪些准备工作？ ==
+
+- Linux PC环境。
+- 按 http://source.android.com/source/initializing.html 搭建主机环境。
+- 准备至少15G空间。源码编译后整个工程目录占空间为 11G。
+- 确认当前用户有访问 192.168.40.50 的权限。
+
+== 如何获得JJ07项目源码？ ==
+
+- 建立项目目录
+{{{
+ $ mkdir jj07
+  }}}
+
+- 取得 repo 工具， _*这一步的目的只为获得repo仓库中的repo文件，拿到repo文件之后，整个repo目录可以删除。*_
+{{{
+ git clone [username@]192.168.40.50:h:/project_repo/JJ07-1/android_mirror/repo -b jj07
+ cp repo/repo ./jj07/
+ rm -rf repo
+ cd jj07
+  }}}
+
+~~注意~~ *本文中 [username@] 是指：*
+{{{
+[username@]这里是指定自己的用户名。使用'[]'括起来表示不一定需要指定此项。
+只有当前用户名与之前提交的公钥中的用户名不同时，才需要在这里明确指定公钥中的用户名。
+比如，之前提交的公钥中指定的用户名为 spd-smmei，而当前系统登陆用户名不是
+spd-smmei，则此时需要指定 spd-smmei@ 。否则不需要指定用户名。
+}}}
+  
+- 从服务器下载源代码
+{{{
+./repo init -u [username@]192.168.40.50:h:/project_repo/JJ07-1/android_mirror/platform/manifest.git -b jj07
+./repo sync
+}}}
+
+== 如何编译源码？ ==
+
+* . build/envsetup.sh
+* lunch，选择 9 (imx53_smd-eng)
+* make
+
+== 如何上传自己的修改？ ==
+
+repo 工具是对 git 的封装，我们内部提交代码到服务器仍然使用 git 对单个 git仓库进行操作。
+
+假设想要修改 kernel_imx 中的代码，并将代码上传至服务器，则需要做如下步骤：
+
+* git co -b jj07 aosp/jj07
+  建立本地 jj07 分支用于跟踪远程仓库中的 jj07 分支。 *如果之前已经创建过则无需再创建* 。
+  
+* 修改代码
+
+* git commit 
+  将修改提交到本地分支。
+  
+* git pull, git push
+  同步服务器中的 kernel_imx 代码，并将自己的修改上传到服务器。
+
+- 说明：
+./repo sync 之后进入任一源码目录下执行 git branch ，都会看到 
+{{{
+  * (no branch)
+}}}
+	
+使用 git branch -r 可以看到当前git仓库的远程分支情况，类似如下：
+{{{
+  aosp/gingerbread
+  aosp/gingerbread-mr4-release
+  aosp/gingerbread-release
+  aosp/imx_r10.3
+  aosp/imx_r10.3.1
+  aosp/jj07
+  aosp/master
+  m/jj07 -> aosp/jj07
+  }}}
+JJ07 项目开发中，我们跟踪的是 jj07 分支，所以使用 git co -b jj07 aosp/jj07
+来创建本地 jj07 分支并跟踪远程 jj07 分支。
+
+== 如何与服务器同步？ ==
+
+有三种方法：
+
+* ./repo sync
+  用于同步.repo/manifest.xml中列出的所有git项目
+  
+* ./repo sync [project_name]
+  用于同步单个项目，project_name可参见 .repo/manifest.xml。
+  
+* git pull
+  进入单个 git 目录中，使用 git pull 来拉取单个git项目代码。
+
+== 如何为JJ07添加一个 git 仓库并使用 repo 管理？ ==
+
+假设现在有源码fsl想放在 device/fsl 目录下，并使用git 和 repo 管理此目录下的代码。
+
+- 进入 *服务器* 相应目录下(platform/device/)建立 fsl.git 目录(使用ssh登陆服务器)
+{{{
+  mkdir fsl.git
+}}}
+
+- 建立仓库
+{{{
+  git init --bare
+}}}
+    
+- 本机上建立好 fsl 源码的本地仓库，添加远程仓库地址
+{{{
+  git remote add aosp [username@]192.168.40.50:h:/project_repo/JJ07-1/android_mirror/device/fsl
+}}}
+
+- 向服务器推送本地 jj07 分支
+{{{
+  git push aosp jj07:jj07
+}}}
+    
+- 在 .repo/manifests 下的 default.xml 里添加 fsl 的相应描述
+{{{
+  <project path="device/fsl" name="device/fsl" />
+}}}
+  
+- 最后便可在本地 jj07 项目中获取服务器上的 fsl 代码了
+{{{
+  ./repo sync device/fsl
+}}}
