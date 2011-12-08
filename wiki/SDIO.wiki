@@ -1,0 +1,49 @@
+
+== SDIO Card ==
+
+SDIO Card 是指使用 SD总线 和 SD命令 的移动产品。外形如一张存储卡，同时遵守
+SDIO规范。
+
+SDIO Card 必须与 SD Memory Card 有兼容的引脚布局、电气特性等。SDIO Card
+强制含有 SPI 模式，但在 SPI 模式下并不保证所有的 SDIO 特性可用。
+
+== Embedded SDIO ==
+
+Embedded SDIO设备 也是使用 SD总线 和 SD命令 的产品。
+
+Embedded 这里指的是 SDIO设备 是固化的产品上，不可被用户随时拿掉的。
+
+Embedded SDIO设备 可以有任意的引脚布局，也不强制含有 SPI模式。
+
+== SDIO Card 特点 ==
+
+- 电压范围：2.7V ~ 3.6V
+- 即插即用
+- 多种规格：
+  * 标准SDIO
+  * miniSDIO
+  * microSDIO
+- 与卡槽匹配连接
+
+== Embedded SDIO设备 特点 ==
+
+- 电压范围： 2.7V ~ 3.6V 或 1.7V ~ 1.95V
+- 不可移动
+- 任意规格，任意引脚布局
+- 可以共享总线
+
+In the following Chapters and Sections, the term "card" needs to be interpreted
+as not only "SDIO Card and Combo Card" but also "Embedded SDIO Device" unless
+otherwise noted.
+
+== SDIO Card 类型 ==
+
+* Full-Speed card - 支持 SPI, 1-bit SD, 4-bit SD 传输模式，时钟范围 0~25MHz
+* Low-Speed card - 支持 SPI, 1-bit SD, 可选支持 4-bit SD. 时钟范围 0~400KHz
+
+== SDIO Card 模式 ==
+
+* SPI(所有SDIO强制支持)
+* 1-bit SD(所有SDIO强制支持)
+* 4-bit SD(高速卡必须支持，低速卡可选支持) 
+

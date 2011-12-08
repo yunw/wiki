@@ -38,3 +38,5 @@
 - [[jj07开发文档]]
 
 - [[PMIC-DA9053]]
+
+- [[HS13 SDK Installation Document]]

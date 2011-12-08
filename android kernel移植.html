@@ -2,7 +2,7 @@
 <head>
 <link rel="Stylesheet" type="text/css" href="style.css" />
 <title>android kernel移植</title>
-<meta http-equiv="Content-Type" content="text/html; charset=" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 </head>
 <body>
 
@@ -15,6 +15,11 @@
 cp -rf fs/yaffs2/ /home/linux/Project/mx23/linux-2.6.31/fs/ 
 cp -rf drivers/staging/android/ /home/linux/Project/mx23/linux-2.6.31/drivers/staging/
 cp -rf drivers/switch/ /home/linux/Project/mx23/linux-2.6.31/drivers/
+</p>
+
+<p>
+make_ext4fs -l 128M -a system out/target/product/imx53_hs13/obj/PACKAGING/systemimage_intermediates/system.img out/target/product/imx53_hs13/system
+make_ext4fs -l 10M -a recovery out/target/product/imx53_hs13/recovery.img out/target/product/imx53_hs13/recovery/root
 </p>
 
 </body>

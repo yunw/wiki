@@ -1,0 +1,17 @@
+
+什么是RF?
+RF是Radio Frequency的缩写，即射频。在电子学理论中，电流流过导体，导体周围会形成磁场；
+交变电流通过导体，导体周围会形成交变的电磁场，称为电磁波。在电磁波频率低于
+100khz时，电磁波会被地表吸收，不能形成有效的传输，但电磁波频率高于100khz时，
+电磁波可以在空气中传播。RF指具有远距离传输能力的高频电磁波，射频技术在无线
+通信领域中被广泛使用。
+
+== AW-AH389 ==
+
+这块芯片集 IEEE 802.11a/b/g/n Wlan + Bluetooth + FM 等功能于一体。
+
+WLAN : SDIO, G-SPI
+Bluetooth : High speed UART, SDIO, PCM/Inter-IC Sound(I2S)
+FM : SDIO, UART, GSPI, I2C
+
+

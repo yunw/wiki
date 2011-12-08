@@ -1,6 +1,10 @@
 
+
+- [[wifi]]
+
 == linux-block-system ==
 
+- [[SDIO]]
 - [[sd-mmc]]
 - [[sd-write-proctect]]
 

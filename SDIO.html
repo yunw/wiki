@@ -1,0 +1,112 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>SDIO</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<h2 id="toc_0.1">SDIO Card</h2>
+
+<p>
+SDIO Card 是指使用 SD总线 和 SD命令 的移动产品。外形如一张存储卡，同时遵守
+SDIO规范。
+</p>
+
+<p>
+SDIO Card 必须与 SD Memory Card 有兼容的引脚布局、电气特性等。SDIO Card
+强制含有 SPI 模式，但在 SPI 模式下并不保证所有的 SDIO 特性可用。
+</p>
+
+<h2 id="toc_0.2">Embedded SDIO</h2>
+
+<p>
+Embedded SDIO设备 也是使用 SD总线 和 SD命令 的产品。
+</p>
+
+<p>
+Embedded 这里指的是 SDIO设备 是固化的产品上，不可被用户随时拿掉的。
+</p>
+
+<p>
+Embedded SDIO设备 可以有任意的引脚布局，也不强制含有 SPI模式。
+</p>
+
+<h2 id="toc_0.3">SDIO Card 特点</h2>
+
+<ul>
+<li>
+电压范围：2.7V ~ 3.6V
+</li>
+<li>
+即插即用
+</li>
+<li>
+多种规格：
+</li>
+<ul>
+<li>
+标准SDIO
+</li>
+<li>
+miniSDIO
+</li>
+<li>
+microSDIO
+</li>
+</ul>
+<li>
+与卡槽匹配连接
+</li>
+</ul>
+
+<h2 id="toc_0.4">Embedded SDIO设备 特点</h2>
+
+<ul>
+<li>
+电压范围： 2.7V ~ 3.6V 或 1.7V ~ 1.95V
+</li>
+<li>
+不可移动
+</li>
+<li>
+任意规格，任意引脚布局
+</li>
+<li>
+可以共享总线
+</li>
+</ul>
+
+<p>
+In the following Chapters and Sections, the term "card" needs to be interpreted
+as not only "SDIO Card and Combo Card" but also "Embedded SDIO Device" unless
+otherwise noted.
+</p>
+
+<h2 id="toc_0.5">SDIO Card 类型</h2>
+
+<ul>
+<li>
+Full-Speed card - 支持 SPI, 1-bit SD, 4-bit SD 传输模式，时钟范围 0~25MHz
+</li>
+<li>
+Low-Speed card - 支持 SPI, 1-bit SD, 可选支持 4-bit SD. 时钟范围 0~400KHz
+</li>
+</ul>
+
+<h2 id="toc_0.6">SDIO Card 模式</h2>
+
+<ul>
+<li>
+SPI(所有SDIO强制支持)
+</li>
+<li>
+1-bit SD(所有SDIO强制支持)
+</li>
+<li>
+4-bit SD(高速卡必须支持，低速卡可选支持) 
+</li>
+</ul>
+
+</body>
+</html>

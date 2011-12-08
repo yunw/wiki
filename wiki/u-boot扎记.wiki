@@ -38,3 +38,28 @@ tftpboot uImage
 
 tftp 下载 uImage 到环境变量 loadaddr 指定的地址处
 如果环境变量中 autostart 为 yes 的话，则调用 bootm 命令从 loadaddr 启动 kernel
+
+
+
+
+==SD==
+
+setenv bootargs_base 'setenv bootargs console=ttymxc0,115200 sd_boot'
+setenv bootargs_sd 'setenv bootargs ${bootargs} init=/init rootfs=ext4'
+setenv bootargs_android 'setenv bootargs ${bootargs} androidboot.console=ttymxc0 init=/init di0_primary video=mxcdi0fb:RGB24,800x600M-32@60 gpu_memory=32M calibration'
+setenv bootcmd_SD 'run bootargs_base bootargs_android bootargs_sd;mmc read 0 ${loadaddr} 0x800 2000;mmc read 0 ${rd_loadaddr} 0x3000 0x258;'
+setenv bootcmd 'run bootcmd_SD; bootm ${loadaddr} ${rd_loadaddr}'
+
+
+==NFS==
+
+setenv serverip 192.168.40.61
+setenv rootip 192.168.40.61
+setenv ipaddr 192.168.40.111
+setenv bootargs
+setenv bootargs_nfs 'setenv bootargs ${bootargs} root=/dev/nfs,rw ip=${ipaddr}:192.168.40.240:192.168.40.1:255.255.255.0::eth0:off nfsroot=${rootip}:${nfsroot},v3,tcp'
+setenv bootargs_base 'setenv bootargs console=ttymxc0,115200'
+setenv bootargs_android 'setenv bootargs ${bootargs} androidboot.console=ttymxc0 init=/init di0_primary video=mxcdi0fb:RGB16,800x600M-16@60,bpp=16 gpu_memory=32M calibration'
+setenv bootcmd_net 'run bootargs_base bootargs_nfs bootargs_android; tftpboot ${loadaddr} ${kernel}; bootm '	
+
+

@@ -1,0 +1,45 @@
+
+1. Setup
+   1.1 PC Setup
+   
+       To build the Android source files, you will need to use Linux PC. It's
+       suggested that you use the most recent version of Ubuntu which is the
+       mostly tested OS for an Android build.
+       After installing Linux PC, you need check whether you have all necessary
+       packages installed for an Android build. Refer to
+       "Setting up your machine" on the Android web site
+       http://source.android.com/source/download.html. 
+ 
+   1.2 Unpack HS13 Source Package
+   
+   please keep 12G free space at least for hs13-android source code.
+   
+{{{
+tar xf hs13-android.tar.bz2
+cd hs13-android
+ls
+  Source, Images, Datasheets
+  }}}
+  
+   1.3 Run Android with Prebuilt Image
+
+1.3.1 Boot-up System from SD
+	Setting board dip swith refer to 3.1
+1.3.2 Burn images into SD-card
+	Insert SD-card to PC, and we get the device-file '/dev/sdX'.
+	(I get /dev/sdb here).
+	./[[mksdcard-hs13.sh]] /dev/sdb
+1.3.3 Insert SD-card into HS13-board and poweron.
+
+2. Build
+
+cd Source
+. ./build/envsetup.sh 
+lunch imx53_hs13-eng
+make
+
+3. Download Images and Boot-up System
+   3.1 Board Dip Switch Setting
+   3.2 System on MMC/SD and eMMC
+   3.3 System on NFS
+   3.4 System on NAND Flash
