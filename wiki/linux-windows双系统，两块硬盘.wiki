@@ -1,4 +1,6 @@
 
+== GRUB ==
+
 grub 装在  /boot分区所在的硬盘上
 /boot 所在的硬盘设置为主硬盘
 
@@ -14,3 +16,27 @@ title winxp
 	chainloader +1
 }}}
 
+== GRUB2 ==
+
+1. chainloader
+grub2将支持 chainloader /file 的用法。
+目前支持的文件只有 grub2 的 boot.img 和 grub4dos 的grldr 和 grub.exe。希望正式版能支持 ntldr bootmgr peldr 等文件。
+
+2. drivemap
+drivemap 兼容 grub 的 map，主要用于只能从 (hd0) 引导启动的系统如 win2000 xp 2003，可以象 map 用法一样如:
+
+menuentry "Windows XP" {
+insmod ntfs
+drivemap (hd0) (hd1)
+drivemap (hd1) (hd0)
+set root=(hd1,1)
+chainloader +1
+}
+
+实际上 drivemap 有了更方便的用法：
+menuentry "Windows XP" {
+insmod ntfs
+set root=(hd1,1)
+drivemap -s (hd0) ${root}
+chainloader +1
+}

@@ -2,9 +2,11 @@
 <head>
 <link rel="Stylesheet" type="text/css" href="style.css" />
 <title>linux-windows双系统，两块硬盘</title>
-<meta http-equiv="Content-Type" content="text/html; charset=" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 </head>
 <body>
+
+<h2 id="toc_0.1">GRUB</h2>
 
 <p>
 grub 装在  /boot分区所在的硬盘上
@@ -26,6 +28,39 @@ title winxp
 	map (hd0) (hd1)
 	chainloader +1
 </pre>
+
+<h2 id="toc_0.2">GRUB2</h2>
+
+<p>
+1. chainloader
+grub2将支持 chainloader /file 的用法。
+目前支持的文件只有 grub2 的 boot.img 和 grub4dos 的grldr 和 grub.exe。希望正式版能支持 ntldr bootmgr peldr 等文件。
+</p>
+
+<p>
+2. drivemap
+drivemap 兼容 grub 的 map，主要用于只能从 (hd0) 引导启动的系统如 win2000 xp 2003，可以象 map 用法一样如:
+</p>
+
+<p>
+menuentry "Windows XP" {
+insmod ntfs
+drivemap (hd0) (hd1)
+drivemap (hd1) (hd0)
+set root=(hd1,1)
+chainloader +1
+}
+</p>
+
+<p>
+实际上 drivemap 有了更方便的用法：
+menuentry "Windows XP" {
+insmod ntfs
+set root=(hd1,1)
+drivemap -s (hd0) ${root}
+chainloader +1
+}
+</p>
 
 </body>
 </html>

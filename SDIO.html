@@ -5,6 +5,17 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 </head>
 <body>
+<p>
+<a href="http://blog.csdn.net/hongjiujing/article/details/4663214">http://blog.csdn.net/hongjiujing/article/details/4663214</a>
+</p>
+
+<p>
+<strong>SD memory and I/O cards use a pull-up resistor on DAT[3] to detect card insertion.</strong>
+</p>
+
+<p>
+这句话如何理解？与mx233看到的实现不同啊。
+</p>
 
 <h2 id="toc_0.1">SDIO Card</h2>
 
@@ -105,6 +116,75 @@ SPI(所有SDIO强制支持)
 </li>
 <li>
 4-bit SD(高速卡必须支持，低速卡可选支持) 
+</li>
+</ul>
+
+<h2 id="toc_0.7">Reset</h2>
+
+<ul>
+<li>
+SDIO Memory Card : 需要 Reset 时发送的是 CMD0。
+</li>
+</ul>
+  
+<ul>
+<li>
+SDIO Card : 使用 CMD52 发送 1 到 CCCR 寄存器的 RES 位上。这种情况下的 CMD0
+<br />  作用只是为了进入 SPI模式，而不会 reset 。
+</li>
+</ul>
+
+<h2 id="toc_0.8">Bus Width</h2>
+
+<ul>
+<li>
+SDIO Memory Card : ACMD6
+</li>
+</ul>
+  
+<ul>
+<li>
+SDIO Card : 使用 CMD52 
+</li>
+</ul>
+
+<h2 id="toc_0.9">Data Transfer Abort</h2>
+
+<ul>
+<li>
+SDIO Memory Card : CMD12
+</li>
+</ul>
+  
+<ul>
+<li>
+SDIO Card : write to the ASx bits in CCCR
+</li>
+</ul>
+
+<h2 id="toc_0.10">Registers</h2>
+
+<ul>
+<li>
+OCR Register (32 bits)
+</li>
+<li>
+CID Register (128 bits)
+</li>
+<li>
+CSD Register (128 bits)
+</li>
+<li>
+RCA Register (16 bits)
+</li>
+<li>
+DSR Register (16 bits, optional)
+</li>
+<li>
+SCR Register (64 bits)
+</li>
+<li>
+SD_CARD_STATUS (512 bits)
 </li>
 </ul>
 
