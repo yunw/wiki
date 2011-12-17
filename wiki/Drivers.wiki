@@ -16,3 +16,8 @@
 == linux-display-system ==
 
 - [[Linux FrameBuffer]]
+
+
+== linux-power-system ==
+
+- [[linux-power-system-1]]
