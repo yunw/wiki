@@ -1,8 +1,15 @@
 http://blog.csdn.net/hongjiujing/article/details/4663214
+http://embed.e800.com.cn/articles/2007/1224/1198497316091_1.html
 
 *SD memory and I/O cards use a pull-up resistor on DAT[3] to detect card insertion.*
 
 这句话如何理解？与mx233看到的实现不同啊。
+
+SDIO 协议下有三类卡：
+
+* Memory Card 存储卡：
+* I/O Card I/O设备卡：
+* Combo Card 组合卡(同时含有Memroy和I/O功能的卡)
 
 == SDIO Card ==
 

@@ -2,12 +2,16 @@
 <head>
 <link rel="Stylesheet" type="text/css" href="style.css" />
 <title>sd-mmc</title>
-<meta http-equiv="Content-Type" content="text/html; charset=" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 </head>
 <body>
-<h1 id="toc_1">SD-MMC</h1>
+<h1 id="toc_1">SD-MMC Memory Card</h1>
 
-<h2 id="toc_1.1">Registers</h2>
+<h2 id="toc_1.1">SD-Memory-Card 与 MMC-Memory-Card 有什么区别</h2>
+
+
+
+<h2 id="toc_1.2">Registers</h2>
 
 <p>
 CID  128  卡的识别码：用于识别单个卡的编号。
@@ -21,7 +25,7 @@ OCR  32   工作条件寄存器(电压)
 <a href="http://hi.baidu.com/narshben/blog/item/cfcb983e52e36c3271cf6cb2.html">http://hi.baidu.com/narshben/blog/item/cfcb983e52e36c3271cf6cb2.html</a>
 </p>
 
-<h2 id="toc_1.2">Commands</h2>
+<h2 id="toc_1.3">Commands</h2>
 
 <p>
 1. CMD0
@@ -204,7 +208,7 @@ OCR  32   工作条件寄存器(电压)
 </p>
 
 
-<h2 id="toc_1.3">SD &amp; MMC</h2>
+<h2 id="toc_1.4">SD &amp; MMC</h2>
 
 <p>
 <a href="http://www.imhan.com/archives/12/">http://www.imhan.com/archives/12/</a>
@@ -249,7 +253,7 @@ MMC还支持CMD14和CMD19进行主线测试，从而选择合适总线进行通�
 另外，MMC卡还支持CMD11、CMD20这类数据流操作，因此较多用于媒体设备上。MMC还支持Boot等高级的用法。
 </p>
 
-<h2 id="toc_1.4">Version1.0 &amp; Version2.0</h2>
+<h2 id="toc_1.5">Version1.0 &amp; Version2.0</h2>
 
 <p>
 SD1.1和SD2.0卡主要通过CMD8来区分，

@@ -1,0 +1,10 @@
+http://www.cnblogs.com/leon19870907/archive/2011/09/19/2181368.html
+http://blog.21ic.com/user1/6977/archives/2011/84629.html
+
+
+IOMUXC是mx53的IO口复用功能控制器，mx53的每个引脚都有8个可选功能(称为ALT模式)。
+不同的模块需要对引脚做一些不同的设置（如上拉，锁存等）。
+
+IOMUXC由许多个IOMUXC基础单元构成，每个基础单元控制一个引脚。
+
+
