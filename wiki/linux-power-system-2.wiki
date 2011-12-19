@@ -1,0 +1,47 @@
+
+ = Android 应用层的电源管理 =
+
+http://blog.csdn.net/lizhiguo0532/article/details/6453595
+
+在 [[linux-power-system-0]] 中谈到过，内核对用户层的接口主要有三个文件：
+
+/sys/power/state
+/sys/power/wake_lock
+/sys/power/wake_unlock
+
+== HAL ==
+
+hardware/libhardware_legacy/power/power.c 可以找到操作上面三个文件的函数：
+
+{{{
+int set_screen_state(int on);
+int acquire_wake_lock(int lock, const char* id);
+int release_wake_lock(const char* id);
+}}}
+
+== JNI ==
+
+frameworks/base/core/jni/android_os_Power.cpp 
+
+{{{
+static int setScreenState(JNIEnv *env, jobject clazz, jint on);
+static void acquireWakeLock(JNIEnv *env, jobject clazz, jint lock, jstring idObj);
+static void releaseWakeLock(JNIEnv *env, jobject clazz, jstring idObj);
+}}}
+
+在这里声明
+frameworks/base/core/java/android/os/Power.java 
+
+{{{
+    public static native int setScreenState(int on);
+    public static native void acquireWakeLock(int lock, String id);
+    public static native void releaseWakeLock(String id);
+  }}}
+
+== JAVA ==
+
+frameworks/base/core/java/android/os/PowerManager.java 
+这个类用来完成与wakelock相关的工作
+
+frameworks/base/services/java/com/android/server/PowerManagerService.java
+这是个专门用于电源管理的服务

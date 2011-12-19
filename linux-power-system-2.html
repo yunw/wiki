@@ -1,0 +1,73 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>linux-power-system-2</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<h1 id="toc_1" class="justcenter">Android 应用层的电源管理</h1>
+
+<p>
+<a href="http://blog.csdn.net/lizhiguo0532/article/details/6453595">http://blog.csdn.net/lizhiguo0532/article/details/6453595</a>
+</p>
+
+<p>
+在 <a href="linux-power-system-0.html">linux-power-system-0</a> 中谈到过，内核对用户层的接口主要有三个文件：
+</p>
+
+<p>
+/sys/power/state
+/sys/power/wake_lock
+/sys/power/wake_unlock
+</p>
+
+<h2 id="toc_1.1">HAL</h2>
+
+<p>
+hardware/libhardware_legacy/power/power.c 可以找到操作上面三个文件的函数：
+</p>
+
+<pre>
+int set_screen_state(int on);
+int acquire_wake_lock(int lock, const char* id);
+int release_wake_lock(const char* id);
+</pre>
+
+<h2 id="toc_1.2">JNI</h2>
+
+<p>
+frameworks/base/core/jni/android_os_Power.cpp 
+</p>
+
+<pre>
+static int setScreenState(JNIEnv *env, jobject clazz, jint on);
+static void acquireWakeLock(JNIEnv *env, jobject clazz, jint lock, jstring idObj);
+static void releaseWakeLock(JNIEnv *env, jobject clazz, jstring idObj);
+</pre>
+
+<p>
+在这里声明
+frameworks/base/core/java/android/os/Power.java 
+</p>
+
+<pre>
+    public static native int setScreenState(int on);
+    public static native void acquireWakeLock(int lock, String id);
+    public static native void releaseWakeLock(String id);
+</pre>
+
+<h2 id="toc_1.3">JAVA</h2>
+
+<p>
+frameworks/base/core/java/android/os/PowerManager.java 
+这个类用来完成与wakelock相关的工作
+</p>
+
+<p>
+frameworks/base/services/java/com/android/server/PowerManagerService.java
+这是个专门用于电源管理的服务
+</p>
+
+</body>
+</html>

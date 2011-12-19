@@ -66,31 +66,18 @@ wakelock.c
 include/linux/eralysuspend.h
 include/linux/wakelock.h
 
+== EarlySuspend ==
 
 重新来讨论 echo 'standby' > /sys/power/state 此时内核的动作
+我们已经打开了 CONFIG_SUSPEND 和 CONFIG_EARLYSUSPEND, state_store 代码经预定义如下
 {{{
 static ssize_t state_store(struct kobject *kobj, struct kobj_attribute *attr,
 			   const char *buf, size_t n)
 {
-#ifdef CONFIG_SUSPEND
-#ifdef CONFIG_EARLYSUSPEND
 	suspend_state_t state = PM_SUSPEND_ON;
-#else
-	suspend_state_t state = PM_SUSPEND_STANDBY;
-#endif
-	const char * const *s;
-#endif
-	char *p;
-	int len;
-	int error = -EINVAL;
 
-	p = memchr(buf, '\n', n);
-	len = p ? p - buf : n;
-
-	/* First, check if we are requested to hibernate */
 	...
 
-#ifdef CONFIG_SUSPEND
 	// 根据写入 state 文件的字符串与 pm_states[] 字符串数组中的相比较，决定
 	// 当前要进入哪一种模式
 	for (s = &pm_states[state]; state < PM_SUSPEND_MAX; s++, state++) {
@@ -98,45 +85,20 @@ static ssize_t state_store(struct kobject *kobj, struct kobj_attribute *attr,
 			break;
 	}
 	if (state < PM_SUSPEND_MAX && *s)
-#ifdef CONFIG_EARLYSUSPEND
 		if (state == PM_SUSPEND_ON || valid_state(state)) {
 			error = 0;
 			request_suspend_state(state);
 		}
-#else
-		error = enter_state(state);
-#endif
-#endif
 
  Exit:
 	return error ? error : n;
 }
 }}}
 
-{{{
-// 将 handler 加到 eraly_suspend_handlers 链表里
-void register_early_suspend(struct early_suspend *handler)
-{
-	struct list_head *pos;
-
-	mutex_lock(&early_suspend_lock);
-	list_for_each(pos, &early_suspend_handlers) {
-		struct early_suspend *e;
-		e = list_entry(pos, struct early_suspend, link);
-		if (e->level > handler->level)
-			break;
-	}
-	list_add_tail(&handler->link, pos);
-	if ((state & SUSPENDED) && handler->suspend)
-		handler->suspend(handler);
-	mutex_unlock(&early_suspend_lock);
-}
-}}}
-
-Android 在 enter_state 之前会调用 request_suspend_state(kernel/power/earlysuspend.c)
+原来最后的 *enter_state(state)* 变成了 *request_suspend_state(state)* (kernel/power/earlysuspend.c)
 
 {{{
-// state 是一个全局变量，记录了当前的电源状态
+// state 是本文件内的一个全局变量，记录了当前的电源状态
 void request_suspend_state(suspend_state_t new_state)
 {
 	unsigned long irqflags;
@@ -161,7 +123,7 @@ void request_suspend_state(suspend_state_t new_state)
 }}}
 
 根据请求的电源状态来决定当前是进入 suspend 还是 resume，进入 suspend 的情况，先
-将 early_suspend_work 加入工作列队并调度执行它们。
+将 early_suspend_work 提交到工作列队，调度执行它们。
 
 {{{
 static DECLARE_WORK(early_suspend_work, early_suspend);
@@ -177,6 +139,8 @@ static void early_suspend(struct work_struct *work)
 			pos->suspend(pos);
 	}
 
+	...
+	wake_unlock(&main_wake_lock);
 	...
 }
 
@@ -201,8 +165,42 @@ static void late_resume(struct work_struct *work)
 中的 resume 函数。
 }}}
 
+=== eraly_suspend_handlers ===
+
+各驱动通过 register_early_suspend 将 handler 加到 eraly_suspend_handlers 链表里
+{{{
+void register_early_suspend(struct early_suspend *handler)
+{
+	struct list_head *pos;
+
+	mutex_lock(&early_suspend_lock);
+	list_for_each(pos, &early_suspend_handlers) {
+		struct early_suspend *e;
+		e = list_entry(pos, struct early_suspend, link);
+		if (e->level > handler->level)
+			break;
+	}
+	list_add_tail(&handler->link, pos);
+	if ((state & SUSPENDED) && handler->suspend)
+		handler->suspend(handler);
+	mutex_unlock(&early_suspend_lock);
+}
+}}}
+
+== WakeLock ==
 
 suspend_work_queue 在 kernel/power/wakelock.c 中创建
+
+上面可以看到，当earlysuspend 时试图 wake_unlock(&main_wake_lock);
+每一次解锁或加锁时都会检查系统里的WakeLock锁的状况。
+
+- 当检测到有超时WakeLock时，则拿到超时时间，并用定时器等待超时后， 
+  在定时器执行函数中再次检查系统内WakeLock锁的情况。
+
+- 当只剩下非超时锁时，则系统一直不能进入Suspend，直到该非超时锁所有者主动解锁。
+
+- 当内核中检查到没有WakeLock锁了，就可以将工作 suspend_work 提交到工作列队，
+  等待调度执行 suspend 进入 Linux 标准的挂起过程。
 
 * wake_lock_init
 {{{
@@ -267,3 +265,16 @@ void wake_unlock(struct wake_lock *lock)
 	spin_unlock_irqrestore(&list_lock, irqflags);
 }
 }}}
+
+* 对用户层的接口
+在 kernel/power/main.c 中，同 /sys/power/state 文件的创建一样，也存在如下代码：
+{{{
+power_attr(wake_lock);
+power_attr(wake_unlock);
+}}}
+
+最后可以得到如下文件：
+ /sys/power/wake_lock
+ /sys/power/wake_unlock
+
+
