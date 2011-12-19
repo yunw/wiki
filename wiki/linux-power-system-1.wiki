@@ -1,132 +1,62 @@
+ = Android 电源管理 =
+ 
 http://disanji.net/
-
 http://blog.chinaunix.net/space.php?uid=9012903&do=blog&id=2011492
-
 http://blog.csdn.net/droidphone/article/details/6642081
 http://blog.csdn.net/lizhiguo0532?viewmode=contents
 
+Android 电源管理在 Linux kernel 基础上增加了 earysuspend 和 wake_lock 两个特性。
 
-Linux Suspend/Resume Framework
+* EarlySuspend
+  当用户空间向内核请求进入 Suspend 时(如：echo 'standby' > /sys/power/state)，
+  内核会先进入 EarlySuspend 状态，同时调用驱动程序注册的回调函数。在 EarlySuspend
+  状态，内核会等待所有的 wake_lock 释放，一旦所有的 wake_lock 释放，则立即会调
+  用 Linux Kernel 标准的休眠过程。
 
-- On（on）                              S0 - Working
-- Standby （standby）                   S1 - CPU and RAM are powered but not executed
-- Suspend to RAM（mem）                 S3 - RAM is powered and the running content is saved to RAM
-- Suspend to Disk，Hibernation（disk）  S4 -  All contect is saved to Disk and power down
+* WakeLock
+  提供这种机制可以阻止内核立即进入Suspend。应用程序可以申请WakeLock，并在适当时候
+  释放它，使得内核能够一直等待合适时机才真正进入 Suspend。
 
-
-kernel/power/main.c
-
-{{{
-power_attr(state);
-
-#define power_attr(_name) \
-static struct kobj_attribute _name##_attr = {	\
-	.attr	= {				\
-		.name = __stringify(_name),	\
-		.mode = 0644,			\
-	},					\
-	.show	= _name##_show,			\
-	.store	= _name##_store,		\
-}
-
-展开后得到：
-static struct kobj_attribute state_attr = {
-	.attr = {
-		.name = "state", 
-		.mode = 0644, 
-	}, 
-	.show = state_show, 
-	.store = state_store, 
-};
-  }}}
-这里就注册了 state_show 和 state_store
-
-{{{
-
-static int __init pm_init(void)
-{
-	...
-	power_kobj = kobject_create_and_add("power", NULL);
-	if (!power_kobj)
-		return -ENOMEM;
-	return sysfs_create_group(power_kobj, &attr_group);
-}
-}}}
-这里就会创建 /sys/power/ 目录，以及该目录下的一系列属性文件，其中就有
-/sys/power/state，对此文件的读/写会分别导致 state_store 和 state_show 的调用。
+== Android 应用层与内核接口层 ==
 
 ${ANDROID}/hardware/libhardware_legacy/power/power.c
 
 应用程序调用 set_screen_state(int on) 向 /sys/power/state 写入相应字符串
-{{{
-enum {
-    ACQUIRE_PARTIAL_WAKE_LOCK = 0,
-    RELEASE_WAKE_LOCK,
-    REQUEST_STATE,
-    OUR_FD_COUNT
-};
-
-const char * const NEW_PATHS[] = {
-    "/sys/power/wake_lock",
-    "/sys/power/wake_unlock",
-    "/sys/power/state"
-};
-
-//开打NEW_PATHS里的文件，并将文件描述符保存到 g_fds[] 数组里
-static int open_file_descriptors(const char * const paths[])
-{
-    int i;
-    for (i=0; i<OUR_FD_COUNT; i++) {
-        int fd = open(paths[i], O_RDWR);
-        if (fd < 0) {
-            fprintf(stderr, "fatal error opening \"%s\"\n", paths[i]);
-            g_error = errno;
-            return -1;
-        }
-        g_fds[i] = fd;
-    }
-
-    g_error = 0;
-    return 0;
-}
-}}}
 
 {{{
+static const char *off_state = "mem";
+static const char *on_state = "on";
+static const char *eink_state = "standby";
+
 int set_screen_state(int on)
 {
     ...
-
+    
     char buf[32];
     int len;
-    if(on)
-        len = snprintf(buf, sizeof(buf), "%s", on_state);
-    else
-        len = snprintf(buf, sizeof(buf), "%s", off_state);
-
-    buf[sizeof(buf) - 1] = '\0';
-    len = write(g_fds[REQUEST_STATE], buf, len);
-    if(len < 0) {
-        LOGE("Failed setting last user activity: g_error=%d\n", g_error);
+    if (on == 1) {
+        len = sprintf(buf, "%s", on_state);
+        len = write(g_fds[REQUEST_STATE], buf, len);
+        ...
+    } else if(on == 0){
+        len = sprintf(buf, "%s", off_state);
+        len = write(g_fds[REQUEST_STATE], buf, len);
+	...
+    }else if(on == 2){
+        len = sprintf(buf, "%s", eink_state);
+        len = write(g_fds[REQUEST_STATE], buf, len);
+	...
     }
-    return 0;
+
+    ...
 }
+
+从上述代码可见，android 中电源管理仍是通过向 /sys/power/state 写入字符串来完成的
   }}}
   
-{{{
-// 下面两个是用于操作 /sys/power/wake_lock 和 /sys/power/wake_unlock 的
-int acquire_wake_lock(int lock, const char* id)
-int release_wake_lock(const char* id)
-  }}}
+== Android 对内核的改动 ==
 
-- 可见上层应用程序就是通过下面这三个函数来进行电源管理的
-{{{
-int set_screen_state(int on)
-int acquire_wake_lock(int lock, const char* id)
-int release_wake_lock(const char* id)
-}}}
-
-
-== kernel/power/ ==
+* kernel/power/
 
 consoleearlysuspend.c
 earlysuspend.c
@@ -137,27 +67,7 @@ include/linux/eralysuspend.h
 include/linux/wakelock.h
 
 
-{{{
-// 将 handler 加到 eraly_suspend_handlers 链表里
-void register_early_suspend(struct early_suspend *handler)
-{
-	struct list_head *pos;
-
-	mutex_lock(&early_suspend_lock);
-	list_for_each(pos, &early_suspend_handlers) {
-		struct early_suspend *e;
-		e = list_entry(pos, struct early_suspend, link);
-		if (e->level > handler->level)
-			break;
-	}
-	list_add_tail(&handler->link, pos);
-	if ((state & SUSPENDED) && handler->suspend)
-		handler->suspend(handler);
-	mutex_unlock(&early_suspend_lock);
-}
-}}}
-
-再看前面提到的 state_store
+重新来讨论 echo 'standby' > /sys/power/state 此时内核的动作
 {{{
 static ssize_t state_store(struct kobject *kobj, struct kobj_attribute *attr,
 			   const char *buf, size_t n)
@@ -193,7 +103,6 @@ static ssize_t state_store(struct kobject *kobj, struct kobj_attribute *attr,
 			error = 0;
 			request_suspend_state(state);
 		}
-		//在真正执行 enter_state 之前，android 在这里实现 eralysuspend 的功能
 #else
 		error = enter_state(state);
 #endif
@@ -203,6 +112,27 @@ static ssize_t state_store(struct kobject *kobj, struct kobj_attribute *attr,
 	return error ? error : n;
 }
 }}}
+
+{{{
+// 将 handler 加到 eraly_suspend_handlers 链表里
+void register_early_suspend(struct early_suspend *handler)
+{
+	struct list_head *pos;
+
+	mutex_lock(&early_suspend_lock);
+	list_for_each(pos, &early_suspend_handlers) {
+		struct early_suspend *e;
+		e = list_entry(pos, struct early_suspend, link);
+		if (e->level > handler->level)
+			break;
+	}
+	list_add_tail(&handler->link, pos);
+	if ((state & SUSPENDED) && handler->suspend)
+		handler->suspend(handler);
+	mutex_unlock(&early_suspend_lock);
+}
+}}}
+
 Android 在 enter_state 之前会调用 request_suspend_state(kernel/power/earlysuspend.c)
 
 {{{
@@ -279,7 +209,7 @@ suspend_work_queue 在 kernel/power/wakelock.c 中创建
 void wake_lock_init(struct wake_lock *lock, int type, const char *name)
 新建一个锁，指定其类型type 和 名字name，将锁设置为初始状态(未锁住)
 最后这个锁加入到 inactive_locks 链表中
-  }}}
+}}}
 
 * wake_lock
 {{{
@@ -336,4 +266,4 @@ void wake_unlock(struct wake_lock *lock)
 	}
 	spin_unlock_irqrestore(&list_lock, irqflags);
 }
-  }}}
+}}}

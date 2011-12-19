@@ -1,0 +1,222 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>linux-power-system-0</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<p>
+<a href="http://blog.csdn.net/lizhiguo0532/article/details/6453546">http://blog.csdn.net/lizhiguo0532/article/details/6453546</a>
+</p>
+
+<h2 id="toc_0.1">电源管理 kernel 与 userspace 的交互</h2>
+
+<p>
+电源管理子系统为用户空间提供了统一的接口，这些接口位于目录 /sys/power/ 中。
+</p>
+
+<p>
+/sys/power/state 控制电源的状态，读此文件可以知道当前内核支持哪些电源状态，
+一般默认都有：
+</p>
+<ul>
+<li>
+'standby' - CPU(和内存)仍在供电。
+</li>
+<li>
+'mem' - 只有内存保持供电，其它所有设备都停止供电。
+</li>
+<li>
+'disk' - 所有内容都保存到磁盘上，启动时再读出并恢复之前的状态。
+<br />	           然后所有设备停止供电。
+</li>
+</ul>
+<p>
+向此文件写入上述三个字符串之一会导致系统进入该状态。
+</p>
+
+<p>
+在我的本机PC上执行如下命令
+</p>
+<pre>
+$ cat /sys/power/state 
+standby mem disk
+</pre>
+<p>
+这说明当前系统支持 standby mem disk 三种电源状态
+</p>
+
+
+<p>
+acpid - Anvanced Configuration and Power Interface, d 代表 Daemon。
+acpid 是一个用户空间的服务进程，它充当应用程序与内核之间的通信接口，负责将内核
+中的电源管理事件转发给应用程序。
+</p>
+
+<h2 id="toc_0.2">内核中的实现</h2>
+
+<p>
+如果我们执行
+</p>
+<pre>
+  echo standby &gt; /sys/power/state
+</pre>
+<p>
+内核中是如何处理这个作动的呢？
+</p>
+
+<p>
+state_store()
+  -&gt; 若 "disk"，hibernate();
+  -&gt; enter_state(state)
+</p>
+
+<h2 id="toc_0.3">代码分析</h2>
+
+<ul>
+<li>
+kernel/power/main.c
+</li>
+</ul>
+
+<pre>
+power_attr(state);
+
+#define power_attr(_name) \
+static struct kobj_attribute _name##_attr = {	\
+	.attr	= {				\
+		.name = __stringify(_name),	\
+		.mode = 0644,			\
+	},					\
+	.show	= _name##_show,			\
+	.store	= _name##_store,		\
+}
+
+展开后得到：
+static struct kobj_attribute state_attr = {
+	.attr = {
+		.name = "state", 
+		.mode = 0644, 
+	}, 
+	.show = state_show, 
+	.store = state_store, 
+};
+</pre>
+<p>
+这里就注册了 state_show 和 state_store
+</p>
+
+<pre>
+
+static int __init pm_init(void)
+{
+	...
+	power_kobj = kobject_create_and_add("power", NULL);
+	if (!power_kobj)
+		return -ENOMEM;
+	return sysfs_create_group(power_kobj, &amp;attr_group);
+}
+</pre>
+<p>
+这里就会创建 /sys/power/ 目录，以及该目录下的一系列属性文件，其中就有
+/sys/power/state，对此文件的读/写会分别导致 state_store 和 state_show 的调用。
+</p>
+
+
+<p>
+<strong>echo standby &gt; /sys/power/state</strong> 向 /sys/power/state 写入 'standby' 字符串，则
+内核中调用 state_store 函数，state_store 做了以下几件事：
+</p>
+<ol>
+<li>
+如果写入的字符串是 'disk'，则调用 hibernate()
+</li>
+<li>
+否则，如果写入的字符串是 pm_states[] 中的一个，则调用 enter_state(state)
+<br />  参数 state 是匹配的字符串在 pm_states[] 中的序号。
+<pre>
+// kernel/power/suspend.c 中对 pm_states 有如下定义：
+const char *const pm_states[PM_SUSPEND_MAX] = {
+	[PM_SUSPEND_STANDBY]	= "standby",
+	[PM_SUSPEND_MEM]	= "mem",
+};
+</pre>
+</li>
+</ol>
+
+
+<pre>
+int enter_state(suspend_state_t state)
+{
+	...
+
+	sys_sync(); // 同步文件系统
+
+	...
+	
+	error = suspend_prepare(); // 冻结所有进程
+	if (error)
+		goto Unlock;
+
+	pr_debug("PM: Entering %s sleep\n", pm_states[state]);
+	error = suspend_devices_and_enter(state);
+
+ Finish:
+	pr_debug("PM: Finishing wakeup.\n");
+	suspend_finish();
+ Unlock:
+	mutex_unlock(&amp;pm_mutex);
+	return error;
+}
+</pre>
+
+
+<pre>
+int suspend_devices_and_enter(suspend_state_t state)
+{
+	int error;
+
+	if (!suspend_ops) // 平台相关的结构体，mx53的详见 arch/arm/mach-mx5/pm.c
+		return -ENOSYS;
+
+	if (suspend_ops-&gt;begin) {
+		error = suspend_ops-&gt;begin(state);
+		if (error)
+			goto Close;
+	}
+	suspend_console(); //suspend the console
+	suspend_test_start();
+	error = dpm_suspend_start(PMSG_SUSPEND); // suspend all devices
+	// 它会遍历 dpm_list 链表上的设备，并执行各驱动中注册的 suspend 函数
+	if (error) {
+		printk(KERN_ERR "PM: Some devices failed to suspend\n");
+		goto Recover_platform;
+	}
+	suspend_test_finish("suspend devices");
+	if (suspend_test(TEST_DEVICES))
+		goto Recover_platform;
+
+	suspend_enter(state); //真正进入 suspend
+
+	... //唤醒代码
+}
+</pre>
+
+<pre>
+static int suspend_enter(suspend_state_t state)
+{
+	...
+
+	if (!error) {
+		if (!suspend_test(TEST_CORE))
+			error = suspend_ops-&gt;enter(state); // 执行具体cpu的挂起指令
+		sysdev_resume();
+	}
+
+	...
+}
+</pre>
+
+</body>
+</html>

@@ -25,4 +25,5 @@
 
 == linux-power-system ==
 
+- [[linux-power-system-0]]
 - [[linux-power-system-1]]
