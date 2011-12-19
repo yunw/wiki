@@ -1,0 +1,339 @@
+http://disanji.net/
+
+http://blog.chinaunix.net/space.php?uid=9012903&do=blog&id=2011492
+
+http://blog.csdn.net/droidphone/article/details/6642081
+http://blog.csdn.net/lizhiguo0532?viewmode=contents
+
+
+Linux Suspend/Resume Framework
+
+- On（on）                              S0 - Working
+- Standby （standby）                   S1 - CPU and RAM are powered but not executed
+- Suspend to RAM（mem）                 S3 - RAM is powered and the running content is saved to RAM
+- Suspend to Disk，Hibernation（disk）  S4 -  All contect is saved to Disk and power down
+
+
+kernel/power/main.c
+
+{{{
+power_attr(state);
+
+#define power_attr(_name) \
+static struct kobj_attribute _name##_attr = {	\
+	.attr	= {				\
+		.name = __stringify(_name),	\
+		.mode = 0644,			\
+	},					\
+	.show	= _name##_show,			\
+	.store	= _name##_store,		\
+}
+
+展开后得到：
+static struct kobj_attribute state_attr = {
+	.attr = {
+		.name = "state", 
+		.mode = 0644, 
+	}, 
+	.show = state_show, 
+	.store = state_store, 
+};
+  }}}
+这里就注册了 state_show 和 state_store
+
+{{{
+
+static int __init pm_init(void)
+{
+	...
+	power_kobj = kobject_create_and_add("power", NULL);
+	if (!power_kobj)
+		return -ENOMEM;
+	return sysfs_create_group(power_kobj, &attr_group);
+}
+}}}
+这里就会创建 /sys/power/ 目录，以及该目录下的一系列属性文件，其中就有
+/sys/power/state，对此文件的读/写会分别导致 state_store 和 state_show 的调用。
+
+${ANDROID}/hardware/libhardware_legacy/power/power.c
+
+应用程序调用 set_screen_state(int on) 向 /sys/power/state 写入相应字符串
+{{{
+enum {
+    ACQUIRE_PARTIAL_WAKE_LOCK = 0,
+    RELEASE_WAKE_LOCK,
+    REQUEST_STATE,
+    OUR_FD_COUNT
+};
+
+const char * const NEW_PATHS[] = {
+    "/sys/power/wake_lock",
+    "/sys/power/wake_unlock",
+    "/sys/power/state"
+};
+
+//开打NEW_PATHS里的文件，并将文件描述符保存到 g_fds[] 数组里
+static int open_file_descriptors(const char * const paths[])
+{
+    int i;
+    for (i=0; i<OUR_FD_COUNT; i++) {
+        int fd = open(paths[i], O_RDWR);
+        if (fd < 0) {
+            fprintf(stderr, "fatal error opening \"%s\"\n", paths[i]);
+            g_error = errno;
+            return -1;
+        }
+        g_fds[i] = fd;
+    }
+
+    g_error = 0;
+    return 0;
+}
+}}}
+
+{{{
+int set_screen_state(int on)
+{
+    ...
+
+    char buf[32];
+    int len;
+    if(on)
+        len = snprintf(buf, sizeof(buf), "%s", on_state);
+    else
+        len = snprintf(buf, sizeof(buf), "%s", off_state);
+
+    buf[sizeof(buf) - 1] = '\0';
+    len = write(g_fds[REQUEST_STATE], buf, len);
+    if(len < 0) {
+        LOGE("Failed setting last user activity: g_error=%d\n", g_error);
+    }
+    return 0;
+}
+  }}}
+  
+{{{
+// 下面两个是用于操作 /sys/power/wake_lock 和 /sys/power/wake_unlock 的
+int acquire_wake_lock(int lock, const char* id)
+int release_wake_lock(const char* id)
+  }}}
+
+- 可见上层应用程序就是通过下面这三个函数来进行电源管理的
+{{{
+int set_screen_state(int on)
+int acquire_wake_lock(int lock, const char* id)
+int release_wake_lock(const char* id)
+}}}
+
+
+== kernel/power/ ==
+
+consoleearlysuspend.c
+earlysuspend.c
+fbearlysuspend.c
+userwakelock.c
+wakelock.c
+include/linux/eralysuspend.h
+include/linux/wakelock.h
+
+
+{{{
+// 将 handler 加到 eraly_suspend_handlers 链表里
+void register_early_suspend(struct early_suspend *handler)
+{
+	struct list_head *pos;
+
+	mutex_lock(&early_suspend_lock);
+	list_for_each(pos, &early_suspend_handlers) {
+		struct early_suspend *e;
+		e = list_entry(pos, struct early_suspend, link);
+		if (e->level > handler->level)
+			break;
+	}
+	list_add_tail(&handler->link, pos);
+	if ((state & SUSPENDED) && handler->suspend)
+		handler->suspend(handler);
+	mutex_unlock(&early_suspend_lock);
+}
+}}}
+
+再看前面提到的 state_store
+{{{
+static ssize_t state_store(struct kobject *kobj, struct kobj_attribute *attr,
+			   const char *buf, size_t n)
+{
+#ifdef CONFIG_SUSPEND
+#ifdef CONFIG_EARLYSUSPEND
+	suspend_state_t state = PM_SUSPEND_ON;
+#else
+	suspend_state_t state = PM_SUSPEND_STANDBY;
+#endif
+	const char * const *s;
+#endif
+	char *p;
+	int len;
+	int error = -EINVAL;
+
+	p = memchr(buf, '\n', n);
+	len = p ? p - buf : n;
+
+	/* First, check if we are requested to hibernate */
+	...
+
+#ifdef CONFIG_SUSPEND
+	// 根据写入 state 文件的字符串与 pm_states[] 字符串数组中的相比较，决定
+	// 当前要进入哪一种模式
+	for (s = &pm_states[state]; state < PM_SUSPEND_MAX; s++, state++) {
+		if (*s && len == strlen(*s) && !strncmp(buf, *s, len))
+			break;
+	}
+	if (state < PM_SUSPEND_MAX && *s)
+#ifdef CONFIG_EARLYSUSPEND
+		if (state == PM_SUSPEND_ON || valid_state(state)) {
+			error = 0;
+			request_suspend_state(state);
+		}
+		//在真正执行 enter_state 之前，android 在这里实现 eralysuspend 的功能
+#else
+		error = enter_state(state);
+#endif
+#endif
+
+ Exit:
+	return error ? error : n;
+}
+}}}
+Android 在 enter_state 之前会调用 request_suspend_state(kernel/power/earlysuspend.c)
+
+{{{
+// state 是一个全局变量，记录了当前的电源状态
+void request_suspend_state(suspend_state_t new_state)
+{
+	unsigned long irqflags;
+	int old_sleep;
+
+	spin_lock_irqsave(&state_lock, irqflags);
+	old_sleep = state & SUSPEND_REQUESTED;
+	
+	...
+	
+	if (!old_sleep && new_state != PM_SUSPEND_ON) { // 进入suspend
+		state |= SUSPEND_REQUESTED;
+		queue_work(suspend_work_queue, &early_suspend_work);
+	} else if (old_sleep && new_state == PM_SUSPEND_ON) { // resume
+		state &= ~SUSPEND_REQUESTED;
+		wake_lock(&main_wake_lock);
+		queue_work(suspend_work_queue, &late_resume_work);
+	}
+	requested_suspend_state = new_state;
+	spin_unlock_irqrestore(&state_lock, irqflags);
+}
+}}}
+
+根据请求的电源状态来决定当前是进入 suspend 还是 resume，进入 suspend 的情况，先
+将 early_suspend_work 加入工作列队并调度执行它们。
+
+{{{
+static DECLARE_WORK(early_suspend_work, early_suspend);
+
+static void early_suspend(struct work_struct *work)
+{
+	struct early_suspend *pos;
+	
+	...
+
+	list_for_each_entry(pos, &early_suspend_handlers, link) {
+		if (pos->suspend != NULL)
+			pos->suspend(pos);
+	}
+
+	...
+}
+
+从 early_suspend_handlers 链表中顺序取出各驱动注册的 eraly_suspend, 然后执行其
+中的 suspend 函数。
+}}}
+
+
+{{{
+static void late_resume(struct work_struct *work)
+{
+	struct early_suspend *pos;
+	
+	...
+
+	list_for_each_entry_reverse(pos, &early_suspend_handlers, link)
+		if (pos->resume != NULL)
+			pos->resume(pos);
+	...
+}
+从 eraly_suspend_handlers 链表中逆序取出各驱动注册的 eraly_suspend，然后执行其
+中的 resume 函数。
+}}}
+
+
+suspend_work_queue 在 kernel/power/wakelock.c 中创建
+
+* wake_lock_init
+{{{
+void wake_lock_init(struct wake_lock *lock, int type, const char *name)
+新建一个锁，指定其类型type 和 名字name，将锁设置为初始状态(未锁住)
+最后这个锁加入到 inactive_locks 链表中
+  }}}
+
+* wake_lock
+{{{
+void wake_lock(struct wake_lock *lock)
+{
+	wake_lock_internal(lock, 0, 0);
+}
+将锁从 inactive_locks 链表中删除， 将锁设置为锁住激活状态(WAKE_LOCK_ACTIVE)
+然后加入到 active_wake_locks[type] 链表中
+}}}
+
+* wake_unlock
+将锁从原链表中删除，并加入到 inactive_locks 链表中，设置成未锁住状态
+只要有对 WAKE_LOCK_SUSPEND 类型的锁解锁，就都有可能进入 suspend 状态。
+{{{
+void wake_unlock(struct wake_lock *lock)
+{
+	int type;
+	unsigned long irqflags;
+	spin_lock_irqsave(&list_lock, irqflags);
+	type = lock->flags & WAKE_LOCK_TYPE_MASK;
+#ifdef CONFIG_WAKELOCK_STAT
+	wake_unlock_stat_locked(lock, 0);
+#endif
+	if (debug_mask & DEBUG_WAKE_LOCK)
+		pr_info("wake_unlock: %s\n", lock->name);
+	lock->flags &= ~(WAKE_LOCK_ACTIVE | WAKE_LOCK_AUTO_EXPIRE);
+	list_del(&lock->link);
+	list_add(&lock->link, &inactive_locks);
+	if (type == WAKE_LOCK_SUSPEND) { // 只有WAKE_LOCK_SUSPEND类型的锁才会阻止系统进入suspend
+		long has_lock = has_wake_lock_locked(type); // 检查是否还有此类锁存在
+		if (has_lock > 0) {
+			// 还有超时锁存在，修改定时器超时时间
+			if (debug_mask & DEBUG_EXPIRE)
+				pr_info("wake_unlock: %s, start expire timer, "
+					"%ld\n", lock->name, has_lock);
+			mod_timer(&expire_timer, jiffies + has_lock);
+		} else {
+			if (del_timer(&expire_timer))
+				if (debug_mask & DEBUG_EXPIRE)
+					pr_info("wake_unlock: %s, stop expire "
+						"timer\n", lock->name);
+			if (has_lock == 0) // 没有此类锁了，可以进入suspend了
+				queue_work(suspend_work_queue, &suspend_work);
+			// 如果 has_lock < 0，则说明有非超时锁存在，只能等待非超时锁自己wake_unlock
+		}
+		if (lock == &main_wake_lock) {
+			if (debug_mask & DEBUG_SUSPEND)
+				print_active_locks(WAKE_LOCK_SUSPEND);
+#ifdef CONFIG_WAKELOCK_STAT
+			update_sleep_wait_stats_locked(0);
+#endif
+		}
+	}
+	spin_unlock_irqrestore(&list_lock, irqflags);
+}
+  }}}
