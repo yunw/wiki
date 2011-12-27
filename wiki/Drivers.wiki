@@ -9,6 +9,7 @@
 
 == linux-block-system ==
 
+- [[sd-card-detect]]
 - [[SDIO]]
 - [[SD-MMC Memory Card]]
 - [[sd-write-proctect]]

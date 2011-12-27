@@ -1,0 +1,33 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>sd-card-detect</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+<p>
+<a href="http://www.eefocus.com/weijiatech/blog/09-06/171879_ca0b1.html">http://www.eefocus.com/weijiatech/blog/09-06/171879_ca0b1.html</a>
+</p>
+
+<p>
+方法之一，使用DAT3（pin1）作为卡在位检测信号；DAT3在sd 卡内部有90k的上拉电阻。Host与sd card之间对DAT3做外部下拉。这样卡没插入时host读DAT为低，卡插入后host读DAT3为高，从而可以判断卡是否插入。
+但是需要注意的是，mmc卡不支持这种在位检测方式（原因参见MMC章节），因此对sd host来讲，如果通过上述方法发现槽位为空并不能放弃对该槽位的查询。当sd host接收到对某槽位的操作时，即使此时通过DAT3卡在位检测方法测到槽位为空，仍然要继续对该槽位进行对应的操作，以防止该槽位有不支持在位检测的mmc卡存在。
+</p>
+ 
+<p>
+对HOST来说，使用这种方法检测卡在位的优点是不用增加多余的管脚，直接利用现有管脚即可。缺点是无法实现对MMC卡的检测，另外要对SD槽位一直保持供电。
+</p>
+ 
+<p>
+方法之二，通过机械按钮的压下/弹出判断卡的在位/不在位。采用这种方法所需电路和实现过程在SD规范中并未涉及，可由用户自行灵活设计。
+如果要实现这种方法的卡在位检测，优点是卡在位检测准确方便，可适用SD/MMC/SDIO；缺点是SD_HOST需要增加一个输入信号线。
+</p>
+ 
+ 
+<p>
+方法之三，在检测到卡在位之前，还可以通过对卡槽位的循环初始化方法来实现对卡在位信息的检测。
+如果要实现这种方法的卡在位检测，优点是不会增加多余管脚，并且对SD/MMC/SDIO都适用。缺点是SD_HOST功耗高，因为对槽位循环初始化需要保持SD CLK和SD CMD信号一直有效。
+</p>
+
+</body>
+</html>
