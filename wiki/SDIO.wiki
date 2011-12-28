@@ -88,3 +88,11 @@ otherwise noted.
 - SCR Register (64 bits)
 - SD_CARD_STATUS (512 bits)
 
+
+
+
+
+int sdio_enable_func(struct sdio_func *func)
+使能第 func->num 的function (IOE)。使能后，再查询IOR位，确认function进入 ready 状态。
+
+最后读的都是function所指向的CSA区域

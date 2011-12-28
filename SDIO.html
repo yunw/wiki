@@ -205,5 +205,18 @@ SD_CARD_STATUS (512 bits)
 </li>
 </ul>
 
+
+
+
+
+<p>
+int sdio_enable_func(struct sdio_func *func)
+使能第 func-&gt;num 的function (IOE)。使能后，再查询IOR位，确认function进入 ready 状态。
+</p>
+
+<p>
+最后读的都是function所指向的CSA区域
+</p>
+
 </body>
 </html>
