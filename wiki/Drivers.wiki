@@ -28,3 +28,5 @@
 - [[linux-power-system-0]]
 - [[linux-power-system-1]]
 - [[linux-power-system-2]]
+
+- [[cpufreq]]

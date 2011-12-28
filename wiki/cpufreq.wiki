@@ -1,0 +1,164 @@
+http://blog.csdn.net/linweig/article/details/5972312
+http://www.ibm.com/developerworks/cn/linux/l-cpufreq-1/index.html
+
+
+
+
+   Clock scaling allows you to change the clock speed of the CPUs on the
+    fly. This is a nice method to save battery power, because the lower
+            the clock speed, the less power the CPU consumes.
+            
+时钟调整允许即时调整CPUs的频率。这是一个省电的好办法，因为运行频率越低，电量损耗越少。
+
+Contents:
+目录
+---------
+1.  CPUFreq core and interfaces
+1.  CPUFreq 核心和接口
+
+2.  CPUFreq notifiers
+2.  CPUFreq 申请
+
+1. General Information
+1. 概述
+=======================
+
+The CPUFreq core code is located in drivers/cpufreq/cpufreq.c. This
+cpufreq code offers a standardized interface for the CPUFreq
+architecture drivers (those pieces of code that do actual
+frequency transitions), as well as to "notifiers". These are device
+drivers or other part of the kernel that need to be informed of
+policy changes (ex. thermal modules like ACPI) or of all
+frequency changes (ex. timing code) or even need to force certain
+speed limits (like LCD drivers on ARM architecture). Additionally, the
+kernel "constant" loops_per_jiffy is updated on frequency changes
+here.
+
+CPUFreq的核心代码位于
+drivers/cpufreq/cpufreq.c。这份代码为不同体系架构的CPUFreq驱动提供了一份标准接口，就像申请者。
+有些设备驱动或内核的一些模块需要知道时钟频率的改变。另外，内核中有"常量"loops_per_jiffy，它的值会
+随时钟频率而改变
+
+
+Reference counting is done by cpufreq_get_cpu and cpufreq_put_cpu,
+which make sure that the cpufreq processor driver is correctly
+registered with the core, and will not be unloaded until
+cpufreq_put_cpu is called.
+
+cpufreq_get_cpu and cpufreq_put_cpu 做了引用计数工作，这确保cpufreq处理驱动被正确的注册和注销.
+
+2. CPUFreq notifiers
+====================
+
+CPUFreq notifiers conform to the standard kernel notifier interface.
+See linux/include/linux/notifier.h for details on notifiers.
+
+CPUFreq 通知链符合标准内核的通知链接口。
+
+There are two different CPUFreq notifiers - policy notifiers and
+transition notifiers.
+
+有两种不同的 CPUFreq 通知链: policy notifiers and transition notifiers.
+
+
+2.1 CPUFreq policy notifiers
+----------------------------
+
+These are notified when a new policy is intended to be set. Each
+CPUFreq policy notifier is called three times for a policy transition:
+
+1.) During CPUFREQ_ADJUST all CPUFreq notifiers may change the limit if
+    they see a need for this - may it be thermal considerations or
+    hardware limitations.
+
+2.) During CPUFREQ_INCOMPATIBLE only changes may be done in order to avoid
+    hardware failure.
+
+3.) And during CPUFREQ_NOTIFY all notifiers are informed of the new policy
+   - if two hardware drivers failed to agree on a new policy before this
+   stage, the incompatible hardware shall be shut down, and the user
+   informed of this.
+
+The phase is specified in the second argument to the notifier.
+
+The third argument, a void *pointer, points to a struct cpufreq_policy
+consisting of five values: cpu, min, max, policy and max_cpu_freq. min 
+and max are the lower and upper frequencies (in kHz) of the new
+policy, policy the new policy, cpu the number of the affected CPU; and 
+max_cpu_freq the maximum supported CPU frequency. This value is given 
+for informational purposes only.
+
+
+2.2 CPUFreq transition notifiers
+--------------------------------
+
+These are notified twice when the CPUfreq driver switches the CPU core
+frequency and this change has any external implications.
+
+The second argument specifies the phase - CPUFREQ_PRECHANGE or
+CPUFREQ_POSTCHANGE.
+
+The third argument is a struct cpufreq_freqs with the following
+values:
+cpu	- number of the affected CPU
+old	- old frequency
+new	- new frequency
+
+If the cpufreq core detects the frequency has changed while the system
+was suspended, these notifiers are called with CPUFREQ_RESUMECHANGE as
+second argument.
+
+
+
+
+
+== CPUFreq on i.MX53 ==
+
+
+CPU frequency scaling device driver
+
+此驱动允许即时调整CPU时钟频率。一旦CPU频率改变，VDDGP也会调整成对应的电压值(参见mx53_wp.c)。
+
+如果要调整的频率在 mx53_wp.c 中没有定义，则选择定义的频率数组中最接近的一个。
+
+频率和电压的调整分别使用 "clock framework API" 和 "regulators API" 。
+
+* 查看有哪些频率值可以调整(单位KHz)：
+{{{
+cat /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state
+  }}}
+第一列是可以调整的频率值
+第二列是cpu处在该频率值的时间
+  
+* 调整频率值(调整的频率是上面命令查看出来的)：
+{{{
+echo 800000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed
+  }}}
+  
+* 查看最大频率
+{{{
+cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+  }}}
+  
+* 查看当前频率
+{{{
+cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq
+  }}}
+  
+
+
+== 源码分析 ==
+
+drivers/cpufreq/cpufreq.c
+arch/arm/plat-mxc/cpufreq.c
+
+
+{{{
+static int __init mxc_cpufreq_init(void)
+{
+	return cpufreq_register_driver(&mxc_driver);
+}
+}}}
+向 cpufreq 子系统注册 mxc 架构的cpufreq驱动结构 *struct cpufreq_driver*
+
+
