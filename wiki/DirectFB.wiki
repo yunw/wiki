@@ -1,6 +1,7 @@
 == Environment ==
 
-export LDFLAGS=-L$PREFIX/lib
+export PREFIX=/opt/busybox
+export LDFLAGS="-L$PREFIX/lib -Wl,-rpath,$PREFIX/lib"
 export CFLAGS="-g -I$PREFIX/include"
 export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
 
