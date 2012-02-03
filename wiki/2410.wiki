@@ -1,0 +1,15 @@
+
+== uboot设置环境变量 ==
+
+{{{
+setenv loadaddr 0x31000000
+setenv bootargs 'console=ttySAC0,115200'
+setenv bootnet 'setenv bootargs ${bootargs} root=/dev/nfs nfsroot=${serverip}:${rootfs} ip=${ipaddr}'
+setenv boottftp 'tftp ${loadaddr} uImage; bootm ${loadaddr}
+setenv bootcmd 'run bootnet; run boottftp'
+  }}}
+  
+
+== TODO ==
+
+1. 移植 cs8900 驱动，使得nfs可以成功挂载 rootfs

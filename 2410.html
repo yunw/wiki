@@ -1,0 +1,27 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>2410</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+
+<h2 id="toc_0.1">uboot设置环境变量</h2>
+
+<pre>
+setenv loadaddr 0x31000000
+setenv bootargs 'console=ttySAC0,115200'
+setenv bootnet 'setenv bootargs ${bootargs} root=/dev/nfs nfsroot=${serverip}:${rootfs} ip=${ipaddr}'
+setenv boottftp 'tftp ${loadaddr} uImage; bootm ${loadaddr}
+setenv bootcmd 'run bootnet; run boottftp'
+</pre>
+  
+
+<h2 id="toc_0.2">TODO</h2>
+
+<p>
+1. 移植 cs8900 驱动，使得nfs可以成功挂载 rootfs
+</p>
+
+</body>
+</html>
