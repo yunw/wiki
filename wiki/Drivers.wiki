@@ -31,3 +31,14 @@
 - [[linux-power-system-2]]
 
 - [[cpufreq]]
+
+- [[linux-clock-system]]
+
+
+== platform ==
+
+[[platform_device]]
+ 
+
+
+

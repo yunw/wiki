@@ -1,4 +1,26 @@
 
-fb_find_mode	modedb.c
-  fb_find_mode_cvt	fbcvt.c
-    fb_cvt_print_name	fbcvt.c
+    
+
+
+int __init mxcfb_init(void)
+{
+	...
+	ret =  platform_driver_register(&mxcfb_driver);
+	...
+}
+
+static struct platform_driver mxcfb_driver = {
+	.driver = {
+		   .name = MXCFB_NAME,
+		   },
+	.probe = mxcfb_probe,
+	.remove = mxcfb_remove,
+	.suspend = mxcfb_suspend,
+	.resume = mxcfb_resume,
+};
+
+static int mxcfb_probe(struct platform_device *pdev) // mxc_ipuv3_fb.c
+  -> mxcfb_setup 		// mxc_ipuv3_fb.c
+     -> fb_find_mode		// modedb.c
+        -> fb_find_mode_cvt	// fbcvt.c
+           -> fb_cvt_print_name	// fbcvt.c

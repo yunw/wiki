@@ -31,6 +31,9 @@
 
 - [[Android]]
 
+- [[BusyBox]]
+- [[DirectFB]]
+
 == 其它 ==
 
 - [[diary/diary|跑步日记]]

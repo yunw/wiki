@@ -1,0 +1,227 @@
+
+
+arch/arm/mach-5x/clock.c
+
+{{{
+
+struct clk_lookup {
+	struct list_head	node;
+	const char		*dev_id;
+	const char		*con_id;
+	struct clk		*clk;
+};
+
+static struct clk_lookup mx53_lookups[] = {
+	...
+};
+
+struct mxc_clk {
+	struct list_head node;
+	char name[20];
+	struct clk *reg_clk;
+};
+
+static struct mxc_clk mx53_clks[ARRAY_SIZE(lookups) + ARRAY_SIZE(mx53_lookups)];
+}}}
+
+
+mx53_hs13_timer_init()
+	mx53_clocks_init(32768, 24000000, 22579200, 0);
+	mx53_clocks_init(unsigned long ckil, unsigned long osc, unsigned long ckih1, unsigned long ckih2)
+	
+	
+{{{
+int __init mx53_clocks_init(unsigned long ckil, unsigned long osc, unsigned long ckih1, unsigned long ckih2)
+{
+	__iomem void *base;
+	struct clk *tclk;
+	int i = 0, j = 0, reg;
+	u32 pll1_rate;
+
+	// 映射pll基地址
+	pll1_base = ioremap(MX53_BASE_ADDR(PLL1_BASE_ADDR), SZ_4K);
+	pll2_base = ioremap(MX53_BASE_ADDR(PLL2_BASE_ADDR), SZ_4K);
+	pll3_base = ioremap(MX53_BASE_ADDR(PLL3_BASE_ADDR), SZ_4K);
+	pll4_base = ioremap(MX53_BASE_ADDR(PLL4_BASE_ADDR), SZ_4K);
+
+	/* Turn off all possible clocks */
+	// 设置 CCGR(0~7) 寄存器，关闭/打开各外设的clock
+	...
+
+	...
+
+	clk_tree_init();
+
+	// 1. 把 lookups[] 里的 clock 都加到 arch/arm/common/clkdev.c里的clocks链表上，
+	// 2. 用 loopups[] 里的元素填充mx53_clks[]
+	// 3. 把 mx53_clks[] 里的元素注册到 arch/arm/plat-mxc/clocks.c 里的clocks链表上
+	for (i = 0; i < ARRAY_SIZE(lookups); i++) {
+		clkdev_add(&lookups[i]);
+		mx53_clks[i].reg_clk = lookups[i].clk;
+		if (lookups[i].con_id != NULL)
+			strcpy(mx53_clks[i].name, lookups[i].con_id);
+		else
+			strcpy(mx53_clks[i].name, lookups[i].dev_id);
+		clk_register(&mx53_clks[i]);
+	}
+
+	// 1. 把 mx53_lookups[] 里的 clock 都加到 arch/arm/common/clkdev.c里的clocks链表上，
+	// 2. 用 mx53_loopups[] 里的元素填充mx53_clks[]
+	// 3. 把 mx53_clks[] 里的元素注册到 arch/arm/plat-mxc/clocks.c 里的clocks链表上
+	...
+
+	clk_set_parent(&esai_clk[0], &ckih_clk);
+
+	ldb_di_clk[0].parent = ldb_di_clk[1].parent =
+	tve_clk.parent = &pll4_sw_clk;
+
+	max_axi_a_clk = MAX_AXI_A_CLK_MX53;
+	max_axi_b_clk = MAX_AXI_B_CLK_MX53;
+	max_ahb_clk = MAX_AHB_CLK_MX53;
+	max_emi_slow_clk = MAX_AHB_CLK_MX53;
+
+	mx53_revision();
+
+	/* set DDR clock parent */
+	reg = __raw_readl(MXC_CCM_CBCMR) &
+				MXC_CCM_CBCMR_DDR_CLK_SEL_MASK;
+	reg >>= MXC_CCM_CBCMR_DDR_CLK_SEL_OFFSET;
+	if (reg == 0) {
+		tclk = &axi_a_clk;
+	} else if (reg == 1) {
+		tclk = &axi_b_clk;
+	} else if (reg == 2) {
+		tclk = &emi_slow_clk;
+	} else {
+		tclk = &ahb_clk;
+	}
+	clk_set_parent(&ddr_clk, tclk);
+
+	clk_set_parent(&esdhc1_clk[2], &tmax2_clk);
+	clk_set_parent(&esdhc2_clk[0], &esdhc1_clk[0]);
+	clk_set_parent(&esdhc3_clk[0], &pll2_sw_clk);
+
+#if 0
+	/*Setup the LPM bypass bits */
+	reg = __raw_readl(MXC_CCM_CLPCR);
+	reg |= MXC_CCM_CLPCR_BYPASS_IPU_LPM_HS
+		| MXC_CCM_CLPCR_BYPASS_RTIC_LPM_HS
+		| MXC_CCM_CLPCR_BYPASS_SCC_LPM_HS
+		| MXC_CCM_CLPCR_BYPASS_SDMA_LPM_HS;
+	__raw_writel(reg, MXC_CCM_CLPCR);
+#endif
+
+	clk_enable(&cpu_clk);
+
+	clk_enable(&main_bus_clk);
+
+	/* Set AXI_B_CLK to be 200MHz */
+	clk_set_rate(&axi_b_clk, 200000000);
+
+	/* Initialise the parents to be axi_b, parents are set to
+	 * axi_a when the clocks are enabled.
+	 */
+
+	clk_set_parent(&vpu_clk[0], &axi_b_clk);
+	clk_set_parent(&vpu_clk[1], &axi_b_clk);
+
+	/* move cspi to 24MHz */
+	clk_set_parent(&cspi_main_clk, &lp_apm_clk);
+	clk_set_rate(&cspi_main_clk, 12000000);
+	/*move the spdif0 to spdif_xtal_ckl */
+	clk_set_parent(&spdif0_clk[0], &spdif_xtal_clk);
+	/*set the SPDIF dividers to 1 */
+	reg = __raw_readl(MXC_CCM_CDCDR);
+	reg &= ~MXC_CCM_CDCDR_SPDIF0_CLK_PODF_MASK;
+	reg &= ~MXC_CCM_CDCDR_SPDIF0_CLK_PRED_MASK;
+	__raw_writel(reg, MXC_CCM_CDCDR);
+
+	/* Move SSI clocks to SSI_LP_APM clock */
+	clk_set_parent(&ssi_lp_apm_clk, &lp_apm_clk);
+
+	clk_set_parent(&ssi1_clk[0], &ssi_lp_apm_clk);
+	/* set the SSI dividers to divide by 2 */
+	reg = __raw_readl(MXC_CCM_CS1CDR);
+	reg &= ~MXC_CCM_CS1CDR_SSI1_CLK_PODF_MASK;
+	reg &= ~MXC_CCM_CS1CDR_SSI1_CLK_PRED_MASK;
+	reg |= 1 << MXC_CCM_CS1CDR_SSI1_CLK_PRED_OFFSET;
+	__raw_writel(reg, MXC_CCM_CS1CDR);
+
+	clk_set_parent(&ssi2_clk[0], &ssi_lp_apm_clk);
+	reg = __raw_readl(MXC_CCM_CS2CDR);
+	reg &= ~MXC_CCM_CS2CDR_SSI2_CLK_PODF_MASK;
+	reg &= ~MXC_CCM_CS2CDR_SSI2_CLK_PRED_MASK;
+	reg |= 1 << MXC_CCM_CS2CDR_SSI2_CLK_PRED_OFFSET;
+	__raw_writel(reg, MXC_CCM_CS2CDR);
+
+	/* Change the SSI_EXT1_CLK to be sourced from PLL2 for camera */
+	clk_disable(&ssi_ext1_clk);
+	clk_set_parent(&ssi_ext1_clk, &pll2_sw_clk);
+	clk_set_rate(&ssi_ext1_clk, 24000000);
+	clk_enable(&ssi_ext1_clk);
+	clk_set_parent(&ssi_ext2_clk, &ssi2_clk[0]);
+
+	/* move usb_phy_clk to 24MHz */
+	clk_set_parent(&usb_phy_clk[0], &osc_clk);
+	clk_set_parent(&usb_phy_clk[1], &osc_clk);
+
+	/* set usboh3_clk to pll2 */
+	clk_set_parent(&usboh3_clk[0], &pll2_sw_clk);
+	reg = __raw_readl(MXC_CCM_CSCDR1);
+	reg &= ~MXC_CCM_CSCDR1_USBOH3_CLK_PODF_MASK;
+	reg &= ~MXC_CCM_CSCDR1_USBOH3_CLK_PRED_MASK;
+	reg |= 4 << MXC_CCM_CSCDR1_USBOH3_CLK_PRED_OFFSET;
+	reg |= 1 << MXC_CCM_CSCDR1_USBOH3_CLK_PODF_OFFSET;
+	__raw_writel(reg, MXC_CCM_CSCDR1);
+
+	/* set SDHC root clock as 200MHZ*/
+	clk_set_rate(&esdhc1_clk[0], 200000000);
+	clk_set_rate(&esdhc3_clk[0], 200000000);
+
+	 /* Set the 1588 RTC input clocks as 108MHZ */
+	clk_set_parent(&ieee_rtc_clk, &pll3_sw_clk);
+	clk_set_rate(&ieee_rtc_clk, 108000000);
+
+	/* The CPU working point should be set according to part number
+	 * information. But part number information is not clear now.
+	 * So update the cpu working point table based on the PLL1 freq
+	 * at boot time
+	 */
+	pll1_rate = clk_get_rate(&pll1_main_clk);
+
+	if (pll1_rate > 1000000000)
+		mx53_set_cpu_part_number(IMX53_CEC_1_2G);
+	else if (pll1_rate > 800000000)
+		mx53_set_cpu_part_number(IMX53_CEC);
+	else
+		mx53_set_cpu_part_number(IMX53_AEC);
+
+	/* Set the current working point. */
+	cpu_wp_tbl = get_cpu_wp(&cpu_wp_nr);
+	for (i = 0; i < cpu_wp_nr; i++) {
+		if (clk_get_rate(&cpu_clk) == cpu_wp_tbl[i].cpu_rate) {
+			cpu_curr_wp = i;
+			break;
+		}
+	}
+	if (i > cpu_wp_nr)
+		BUG();
+
+	clk_set_parent(&arm_axi_clk, &axi_b_clk);
+	clk_set_parent(&ipu_clk[0], &axi_b_clk);
+	clk_set_parent(&gpu3d_clk[0], &axi_b_clk);
+	clk_set_parent(&gpu2d_clk, &axi_b_clk);
+
+	clk_set_parent(&emi_slow_clk, &ahb_clk);
+	clk_set_rate(&emi_slow_clk, clk_round_rate(&emi_slow_clk, 133333333));
+
+	clk_set_rate(&emi_enfc_clk, clk_round_rate(&emi_enfc_clk,
+			MAX_NFC_CLK));
+
+	/* set the freq of asrc_serial_clk */
+	clk_set_rate(&asrc_clk[0], clk_round_rate(&asrc_clk[0],
+			1190000));
+	base = ioremap(MX53_BASE_ADDR(GPT1_BASE_ADDR), SZ_4K);
+	mxc_timer_init(&gpt_clk[0], base, MXC_INT_GPT);
+	return 0;
+}

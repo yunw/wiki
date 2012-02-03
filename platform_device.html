@@ -1,0 +1,91 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>platform_device</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<p>
+<a href="http://zhanglinbao.bokee.com/5408080.html">http://zhanglinbao.bokee.com/5408080.html</a>
+</p>
+
+<p>
+include/linux/platform_device.h
+</p>
+
+<pre>
+struct platform_device {
+	const char	* name;
+	int		id;
+	struct device	dev;
+	u32		num_resources;
+	struct resource	* resource;
+
+	const struct platform_device_id	*id_entry;
+
+	/* arch specific additions */
+	struct pdev_archdata	archdata;
+};
+
+static struct resource mxcsdhc1_resources[] = {
+	{
+		.start = MMC_SDHC1_BASE_ADDR,
+		.end = MMC_SDHC1_BASE_ADDR + SZ_4K - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	{
+		.start = MXC_INT_MMC_SDHC1,
+		.end = MXC_INT_MMC_SDHC1,
+		.flags = IORESOURCE_IRQ,
+	},
+	{
+		.flags = IORESOURCE_IRQ,
+	},
+};
+
+struct platform_device mxcsdhc1_device = {
+	.name = "mxsdhci",
+	.id = 0,
+	.num_resources = ARRAY_SIZE(mxcsdhc1_resources),
+	.resource = mxcsdhc1_resources,
+};
+</pre>
+	
+<p>
+arch/arm/mach-mx5/mx53_hs13.c
+</p>
+
+<pre>
+mxc_board_init()
+  -&gt; mxc_register_device(&amp;mxcsdhc1_device, &amp;mmc1_data);
+
+static struct mxc_mmc_platform_data mmc1_data = {
+	.ocr_mask = MMC_VDD_27_28 | MMC_VDD_28_29 | MMC_VDD_29_30
+		| MMC_VDD_31_32,
+	.caps = MMC_CAP_4_BIT_DATA,
+	.min_clk = 400000,
+	.max_clk = 50000000,
+	.card_inserted_state = 0,
+	.status = sdhc_get_card_det_status,
+	.wp_status = sdhc_write_protect,
+	.clock_mmc = "esdhc_clk",
+	.power_mmc = NULL,
+};
+  
+int __init mxc_register_device(struct platform_device *pdev, void *data)
+{
+	int ret;
+
+	pdev-&gt;dev.platform_data = data;
+
+	ret = platform_device_register(pdev);
+	if (ret)
+		pr_debug("Unable to register platform device '%s': %d\n",
+			 pdev-&gt;name, ret);
+
+	return ret;
+}
+</pre>
+
+</body>
+</html>

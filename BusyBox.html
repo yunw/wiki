@@ -1,0 +1,154 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>BusyBox</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<h2 id="toc_0.1">配置 编译 安装</h2>
+
+<p>
+make ARCH=arm menuconfig
+</p>
+
+<p>
+Busybox Settings  ---&gt;        
+	General Configuration  ---&gt;
+		[*] Don't use /usr     
+	Build Options  ---&gt;
+		### 静态编译就选上，否则默认是动态链接
+		[*] Build BusyBox as a static binary (no shared libs)
+		(arm-linux-) Cross Compiler prefix
+</p>
+		
+		
+<p>
+make ARCH=arm
+</p>
+<ol>
+<li>
+安装到_install目录下
+</li>
+</ol>
+<p>
+make install 
+</p>
+
+<ol>
+<li>
+创建文件系统
+</li>
+</ol>
+<p>
+cd _install
+mkdir lib dev proc etc mnt usr bin sbin tmp sys
+</p>
+
+<ol>
+<li>
+若是动态编译，还需要复制动态库
+</li>
+</ol>
+
+<p>
+linux@debian:bin$ arm-linux-readelf -d busybox 
+</p>
+
+<pre>
+Dynamic section at offset 0xde2f8 contains 25 entries:
+  Tag        Type                         Name/Value
+ 0x00000001 (NEEDED)                     Shared library: [libm.so.6]
+ 0x00000001 (NEEDED)                     Shared library: [libc.so.6]
+ ...
+</pre>
+
+<p>
+cp -a ld* /opt/busybox/lib
+cp -a libm* /opt/busybox/lib
+cp -a libc* /opt/busybox/lib
+</p>
+
+<ol>
+<li>
+/etc/inittab /etc/init.d/rcS /etc/fstab
+</li>
+</ol>
+
+<p>
+/etc/inittab
+</p>
+<pre>
+::sysinit:/etc/init.d/rcS
+::askfirst:-/bin/sh
+tty2::askfirst:-/bin/sh
+tty3::askfirst:-/bin/sh
+tty4::askfirst:-/bin/sh
+tty4::respawn:/sbin/getty 38400 tty5
+tty5::respawn:/sbin/getty 38400 tty6
+</pre>
+
+<p>
+/etc/init.d/rcS
+</p>
+<pre>
+#! /bin/sh
+
+mount -a
+echo /sbin/mdev &gt; /proc/sys/kernel/hotplug
+/sbin/mdev -s
+</pre>
+
+<p>
+/etc/fstab
+</p>
+<pre>
+proc    /proc    proc    defaults    0    0
+sysfs   /sys     sysfs   defaults    0    0
+</pre>
+
+<h2 id="toc_0.2">Bootup</h2>
+
+<ol>
+<li>
+设置u-boot环境变量，tftp下载Kernel(uImage)再通过NFS挂载根文件系统
+<pre>
+setenv nfsroot '/opt/busybox'
+setenv serverip 192.168.40.61
+setenv rootip 192.168.40.61
+setenv ipaddr 192.168.40.111
+setenv bootargs
+setenv bootargs_base 'setenv bootargs console=ttymxc0,115200'
+setenv bootargs_nfs 'setenv bootargs ${bootargs} root=/dev/nfs,rw ip=${ipaddr}::192.168.40.1:::eth0:off nfsroot=${rootip}:${nfsroot},v3,tcp'
+setenv bootargs_android 'setenv bootargs ${bootargs} androidboot.console=ttymxc0 init=/linuxrc'
+setenv bootargs_lcd 'setenv bootargs ${bootargs} video=mxcdi0fb:RGB666,UMSH ldb=single,di=0 di0_primary'
+setenv bootcmd_net 'run bootargs_base bootargs_nfs bootargs_android bootargs_lcd; tftpboot ${loadaddr} ${kernel}; bootm'	
+setenv bootcmd 'run bootcmd_net'
+</pre>
+</li>
+</ol>
+
+<h2 id="toc_0.3">ERROR</h2>
+<pre>
+can't open /dev/tty3: No such file or directory
+can't open /dev/tty4: No such file or directory
+can't open /dev/tty2: No such file or directory
+can't open /dev/tty3: No such file or directory
+can't open /dev/tty4: No such file or directory
+can't open /dev/tty2: No such file or directory
+can't open /dev/tty3: No such file or directory
+can't open /dev/tty4: No such file or directory
+can't open /dev/tty2: No such file or directory
+can't open /dev/tty3: No such file or directory
+can't open /dev/tty4: No such file or directory
+</pre>
+
+<p>
+解决办法：
+ ln -sf /dev/null /dev/tty2
+ ln -sf /dev/null /dev/tty3
+ ln -sf /dev/null /dev/tty4
+</p>
+
+</body>
+</html>

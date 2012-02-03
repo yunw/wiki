@@ -1,0 +1,102 @@
+
+== 配置 编译 安装==
+
+make ARCH=arm menuconfig
+
+Busybox Settings  --->        
+	General Configuration  --->
+		[*] Don't use /usr     
+	Build Options  --->
+		### 静态编译就选上，否则默认是动态链接
+		[*] Build BusyBox as a static binary (no shared libs)
+		(arm-linux-) Cross Compiler prefix
+		
+		
+make ARCH=arm
+# 安装到_install目录下
+make install 
+
+# 创建文件系统
+cd _install
+mkdir lib dev proc etc mnt usr bin sbin tmp sys
+
+# 若是动态编译，还需要复制动态库
+
+linux@debian:bin$ arm-linux-readelf -d busybox 
+
+{{{
+Dynamic section at offset 0xde2f8 contains 25 entries:
+  Tag        Type                         Name/Value
+ 0x00000001 (NEEDED)                     Shared library: [libm.so.6]
+ 0x00000001 (NEEDED)                     Shared library: [libc.so.6]
+ ...
+}}}
+
+cp -a ld* /opt/busybox/lib
+cp -a libm* /opt/busybox/lib
+cp -a libc* /opt/busybox/lib
+
+# /etc/inittab /etc/init.d/rcS /etc/fstab
+
+/etc/inittab
+{{{
+::sysinit:/etc/init.d/rcS
+::askfirst:-/bin/sh
+tty2::askfirst:-/bin/sh
+tty3::askfirst:-/bin/sh
+tty4::askfirst:-/bin/sh
+tty4::respawn:/sbin/getty 38400 tty5
+tty5::respawn:/sbin/getty 38400 tty6
+}}}
+
+/etc/init.d/rcS
+{{{
+#! /bin/sh
+
+mount -a
+echo /sbin/mdev > /proc/sys/kernel/hotplug
+/sbin/mdev -s
+}}}
+
+/etc/fstab
+{{{
+proc    /proc    proc    defaults    0    0
+sysfs   /sys     sysfs   defaults    0    0
+}}}
+
+== Bootup ==
+
+# 设置u-boot环境变量，tftp下载Kernel(uImage)再通过NFS挂载根文件系统
+{{{
+setenv nfsroot '/opt/busybox'
+setenv serverip 192.168.40.61
+setenv rootip 192.168.40.61
+setenv ipaddr 192.168.40.111
+setenv bootargs
+setenv bootargs_base 'setenv bootargs console=ttymxc0,115200'
+setenv bootargs_nfs 'setenv bootargs ${bootargs} root=/dev/nfs,rw ip=${ipaddr}::192.168.40.1:::eth0:off nfsroot=${rootip}:${nfsroot},v3,tcp'
+setenv bootargs_android 'setenv bootargs ${bootargs} androidboot.console=ttymxc0 init=/linuxrc'
+setenv bootargs_lcd 'setenv bootargs ${bootargs} video=mxcdi0fb:RGB666,UMSH ldb=single,di=0 di0_primary'
+setenv bootcmd_net 'run bootargs_base bootargs_nfs bootargs_android bootargs_lcd; tftpboot ${loadaddr} ${kernel}; bootm'	
+setenv bootcmd 'run bootcmd_net'
+}}}
+
+== ERROR ==
+{{{
+can't open /dev/tty3: No such file or directory
+can't open /dev/tty4: No such file or directory
+can't open /dev/tty2: No such file or directory
+can't open /dev/tty3: No such file or directory
+can't open /dev/tty4: No such file or directory
+can't open /dev/tty2: No such file or directory
+can't open /dev/tty3: No such file or directory
+can't open /dev/tty4: No such file or directory
+can't open /dev/tty2: No such file or directory
+can't open /dev/tty3: No such file or directory
+can't open /dev/tty4: No such file or directory
+}}}
+
+解决办法：
+ ln -sf /dev/null /dev/tty2
+ ln -sf /dev/null /dev/tty3
+ ln -sf /dev/null /dev/tty4

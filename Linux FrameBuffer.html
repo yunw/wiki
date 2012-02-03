@@ -2,16 +2,46 @@
 <head>
 <link rel="Stylesheet" type="text/css" href="style.css" />
 <title>Linux FrameBuffer</title>
-<meta http-equiv="Content-Type" content="text/html; charset=" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 </head>
 <body>
 
+    
+
+
 <p>
-fb_find_mode	modedb.c
-  fb_find_mode_cvt	fbcvt.c
+int __init mxcfb_init(void)
+{
+	...
+	ret =  platform_driver_register(&amp;mxcfb_driver);
+	...
+}
+</p>
+
+<p>
+static struct platform_driver mxcfb_driver = {
+	.driver = {
 </p>
 <blockquote>
-fb_cvt_print_name	fbcvt.c
+.name = MXCFB_NAME,
+},
+</blockquote>
+<p>
+	.probe = mxcfb_probe,
+	.remove = mxcfb_remove,
+	.suspend = mxcfb_suspend,
+	.resume = mxcfb_resume,
+};
+</p>
+
+<p>
+static int mxcfb_probe(struct platform_device *pdev) // mxc_ipuv3_fb.c
+  -&gt; mxcfb_setup 		// mxc_ipuv3_fb.c
+</p>
+<blockquote>
+-&gt; fb_find_mode		// modedb.c
+-&gt; fb_find_mode_cvt	// fbcvt.c
+-&gt; fb_cvt_print_name	// fbcvt.c
 </blockquote>
 
 </body>
