@@ -51,11 +51,36 @@ module_init(woal_init_module);
               -> driver_attach(drv) // drivers_autoprobe 在 bus_register 时置为1了，
 				    // 这里试图将驱动与设备连接起来
                  -> bus_for_each_dev(drv->bus, NULL, drv, __driver_attach)
-                    遍历drv->bus上所有的设备并为每个设备调用__driver_attach来确定是否匹配
-                    
+                    遍历drv->bus上所有的设备并为每个设备调用__driver_attach，尝试与drv连接
+
 __driver_attach(drv, data)
   -> driver_match_dvice(drv, dev)
-  -> driver_probe_device(drv, dev)
-     -> 1. dev->bus->probe()    // sdio_bus_probe() -> *woal_sdio_probe()*
-     -> 2. 若1为空则执行：drv->probe()
+  -> *driver_probe_device(drv, dev)*
 
+===============================
+
+device_register(struct device *dev)
+  -> device_initialize(dev);
+  -> device_add(dev);
+    -> bus_probe_device(dev);
+       -> device_attach(dev);
+          -> bus_for_each_drv(dev->bus, NULL, dev, __device_attach);
+          遍历dev所在的总线上的drv，将每一个找到的drv执行__device_attach，尝着与dev连接
+   
+__device_attach(drv, data) // struct device *dev = data;
+  -> driver_match_device(drv, dev) // 先检查此drv与dev是否匹配，如果不匹配则直接返回
+  -> *driver_probe_device(drv, dev)* // 如果drv与dev匹配，则尝试进行probe动作
+
+===============================
+  
+*driver_probe_device(drv, dev)* // 此函数尝试绑定设备和驱动，成功返回1，否则返回0
+  -> 1. dev->bus->probe()    // 如果设备所在的总线bus有probe，则执行bus的probe函数
+  -> 2. drv->probe() // 如果总线bus上没有probe，则看drv上是否有probe，如果有则执行它
+
+{{{
+static inline int driver_match_device(struct device_driver *drv,
+				      struct device *dev)
+{
+	return drv->bus->match ? drv->bus->match(dev, drv) : 1;
+}
+}}}

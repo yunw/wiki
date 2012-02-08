@@ -1,0 +1,7 @@
+
+安装iptux之后, 不能立即显示图标
+
+gtk-update-icon-cache $PREFIX/share/icons/hicolor/
+
+$PREFIX 是软件安装路径
+

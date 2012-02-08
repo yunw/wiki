@@ -2,7 +2,7 @@
 <head>
 <link rel="Stylesheet" type="text/css" href="style.css" />
 <title>2410</title>
-<meta http-equiv="Content-Type" content="text/html; charset=" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 </head>
 <body>
 
@@ -21,6 +21,92 @@ setenv bootcmd 'run bootnet; run boottftp'
 
 <p>
 1. 移植 cs8900 驱动，使得nfs可以成功挂载 rootfs
+</p>
+
+<p>
+Freeing init memory: 116K
+request_module: runaway loop modprobe binfmt-464c
+Failed to execute /linuxrc.  Attempting defaults...
+request_module: runaway loop modprobe binfmt-464c
+request_module: runaway loop modprobe binfmt-464c
+</p>
+
+<p>
+busybox 编译时使用
+</p>
+<pre>
+make ARCH=arm CROSS_COMPILE=arm-linux-
+</pre>
+<p>
+最后安装不能直接
+</p>
+<pre>
+make install
+</pre>
+<p>
+这样会重新用PC上的gcc编译，生成的都是x86架构的代码
+</p>
+
+<p>
+最好直接
+</p>
+<pre>
+make ARCH=arm CROSS_COMPILE=arm-linux- install
+</pre>
+  
+<p>
+启动后一直输出
+</p>
+<pre>
+can't open /dev/tty2: No such file or directory
+can't open /dev/tty3: No such file or directory
+can't open /dev/tty4: No such file or directory
+</pre>
+		
+<p>
+在busybox/init/init.c中有如下几句，注释掉即可
+</p>
+<pre>
+new_init_action(ASKFIRST, bb_default_login_shell, VC_2);
+new_init_action(ASKFIRST, bb_default_login_shell, VC_3);
+new_init_action(ASKFIRST, bb_default_login_shell, VC_4);
+</pre>
+  
+
+
+<p>
+挂载的文件系统只有几个目录，内核没有生成目录
+</p>
+<pre>
+/ # ls
+bin      linuxrc  sbin     usr
+/ # mkdir proc
+mkdir: can't create directory 'proc': Read-only file system
+</pre>
+<p>
+这些目录要自己建
+</p>
+
+
+<p>
+编译内核遇到错误
+</p>
+<pre>
+mm/page-writeback.c: In function 'write_cache_pages':
+mm/page-writeback.c:1069: internal compiler error: Segmentation fault
+Please submit a full bug report,
+with preprocessed source if appropriate.
+See &lt;http://gcc.gnu.org/bugs.html&gt; for instructions.
+make[1]: *** [mm/page-writeback.o] 错误 1
+make: *** [mm] 错误 2
+make: *** 正在等待未完成的任务....
+</pre>
+<p>
+注释下面这一行即可
+</p>
+
+<p>
+// BUG_ON(PageWriteback(page));
 </p>
 
 </body>

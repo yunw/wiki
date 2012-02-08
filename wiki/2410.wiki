@@ -13,3 +13,66 @@ setenv bootcmd 'run bootnet; run boottftp'
 == TODO ==
 
 1. 移植 cs8900 驱动，使得nfs可以成功挂载 rootfs
+
+Freeing init memory: 116K
+request_module: runaway loop modprobe binfmt-464c
+Failed to execute /linuxrc.  Attempting defaults...
+request_module: runaway loop modprobe binfmt-464c
+request_module: runaway loop modprobe binfmt-464c
+
+busybox 编译时使用
+{{{
+make ARCH=arm CROSS_COMPILE=arm-linux-
+  }}}
+最后安装不能直接
+{{{
+make install
+  }}}
+这样会重新用PC上的gcc编译，生成的都是x86架构的代码
+
+最好直接
+{{{
+make ARCH=arm CROSS_COMPILE=arm-linux- install
+  }}}
+  
+启动后一直输出
+{{{
+can't open /dev/tty2: No such file or directory
+can't open /dev/tty3: No such file or directory
+can't open /dev/tty4: No such file or directory
+}}}
+		
+在busybox/init/init.c中有如下几句，注释掉即可
+{{{
+new_init_action(ASKFIRST, bb_default_login_shell, VC_2);
+new_init_action(ASKFIRST, bb_default_login_shell, VC_3);
+new_init_action(ASKFIRST, bb_default_login_shell, VC_4);
+  }}}
+  
+
+
+挂载的文件系统只有几个目录，内核没有生成目录
+{{{
+/ # ls
+bin      linuxrc  sbin     usr
+/ # mkdir proc
+mkdir: can't create directory 'proc': Read-only file system
+}}}
+这些目录要自己建
+
+
+编译内核遇到错误
+{{{
+mm/page-writeback.c: In function 'write_cache_pages':
+mm/page-writeback.c:1069: internal compiler error: Segmentation fault
+Please submit a full bug report,
+with preprocessed source if appropriate.
+See <http://gcc.gnu.org/bugs.html> for instructions.
+make[1]: *** [mm/page-writeback.o] 错误 1
+make: *** [mm] 错误 2
+make: *** 正在等待未完成的任务....
+}}}
+注释下面这一行即可
+
+// BUG_ON(PageWriteback(page));
+

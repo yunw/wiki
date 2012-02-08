@@ -2,7 +2,7 @@
 <head>
 <link rel="Stylesheet" type="text/css" href="style.css" />
 <title>linux-device-driver-01</title>
-<meta http-equiv="Content-Type" content="text/html; charset=" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 </head>
 <body>
 
@@ -75,18 +75,54 @@ module_init(woal_init_module);
 -&gt; driver_attach(drv) // drivers_autoprobe 在 bus_register 时置为1了，
 // 这里试图将驱动与设备连接起来
 -&gt; bus_for_each_dev(drv-&gt;bus, NULL, drv, __driver_attach)
-遍历drv-&gt;bus上所有的设备并为每个设备调用__driver_attach来确定是否匹配
+遍历drv-&gt;bus上所有的设备并为每个设备调用__driver_attach，尝试与drv连接
 </blockquote>
-                    
+
 <p>
 __driver_attach(drv, data)
   -&gt; driver_match_dvice(drv, dev)
-  -&gt; driver_probe_device(drv, dev)
+  -&gt; <strong>driver_probe_device(drv, dev)</strong>
+</p>
+
+<p>
+===============================
+</p>
+
+<p>
+device_register(struct device *dev)
+  -&gt; device_initialize(dev);
+  -&gt; device_add(dev);
 </p>
 <blockquote>
--&gt; 1. dev-&gt;bus-&gt;probe()    // sdio_bus_probe() -&gt; <strong>woal_sdio_probe()</strong>
--&gt; 2. 若1为空则执行：drv-&gt;probe()
+-&gt; bus_probe_device(dev);
+-&gt; device_attach(dev);
+-&gt; bus_for_each_drv(dev-&gt;bus, NULL, dev, __device_attach);
+遍历dev所在的总线上的drv，将每一个找到的drv执行__device_attach，尝着与dev连接
 </blockquote>
+   
+<p>
+__device_attach(drv, data) // struct device *dev = data;
+  -&gt; driver_match_device(drv, dev) // 先检查此drv与dev是否匹配，如果不匹配则直接返回
+  -&gt; <strong>driver_probe_device(drv, dev)</strong> // 如果drv与dev匹配，则尝试进行probe动作
+</p>
+
+<p>
+===============================
+</p>
+  
+<p>
+<strong>driver_probe_device(drv, dev)</strong> // 此函数尝试绑定设备和驱动，成功返回1，否则返回0
+  -&gt; 1. dev-&gt;bus-&gt;probe()    // 如果设备所在的总线bus有probe，则执行bus的probe函数
+  -&gt; 2. drv-&gt;probe() // 如果总线bus上没有probe，则看drv上是否有probe，如果有则执行它
+</p>
+
+<pre>
+static inline int driver_match_device(struct device_driver *drv,
+				      struct device *dev)
+{
+	return drv-&gt;bus-&gt;match ? drv-&gt;bus-&gt;match(dev, drv) : 1;
+}
+</pre>
 
 </body>
 </html>
