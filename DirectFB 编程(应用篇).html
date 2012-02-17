@@ -1,0 +1,79 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>DirectFB 编程(应用篇)</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+
+<ul>
+<li>
+DFBResult DirectFBInit( int *argc, char *(*argv[]) )
+</li>
+</ul>
+
+<p>
+ 解析配置文件，依次有：
+	SYSCONFDIR"/directfbrc",
+	$HOME"/.directfbrc",
+	SYSCONFDIR"/directfbrc.应用程序名", 
+	$HOME"/directfbrc.应用程序名", 
+	命令行参数
+ 所有的配置结果都记录于 "DFBConfig *dfb_config;"这个结构里。
+</p>
+	
+<ul>
+<li>
+DFBResult DirectFBCreate( IDirectFB **interface )
+</li>
+</ul>
+
+<ul>
+<li>
+direct_initialize()
+<br />    初始化log, DirectFB中实现了三种LOG方法：
+<br />    	输出到stderr;
+<br />	记录到一个file;
+<br />	通过upd发送出去;
+<br />    安装信号处理函数。
+</li>
+</ul>
+    
+<ul>
+<li>
+dfb_core_create( &amp;core_dfb );
+<br />     ret = dfb_system_lookup();
+<br />     这里的system是指显示方式，比如基于framebuffer的fbdev和基于XWindows的x11等。
+<br />     它先调用 direct_modules_explore_directory( &amp;dfb_core_systems ); 在指定的目
+<br />     录里查找system的实现，然后与配置中指定的名称匹配，找到匹配的system后调用
+<br />     GetSystemInfo从system里取得一些信息。
+</li>
+</ul>
+     
+<ul>
+<li>
+direct_find_best_memcpy();
+<br />    GUI里memcpy的效率对整体效率影响很大，Direct针对不同系统实现了一些优化过的
+<br />    memcpy函数，这里找出效率最高的。
+</li>
+</ul>
+     
+<ul>
+<li>
+fusion_enter( dfb_config-&gt;session, DIRECTFB_CORE_ABI, FER_ANY, &amp;core-&gt;world );
+</li>
+<li>
+fusion_arena_enter
+</li>
+</ul>
+  
+<ul>
+<li>
+IDirectFB_Construct( dfb, core_dfb );
+</li>
+<li>
+</li>
+</ul>
+
+</body>
+</html>
