@@ -1,0 +1,212 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../style.css" />
+<title>简单休眠</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<h1 id="toc_1">sleepy</h1>
+
+<p>
+ldd3中有一个例子 sleepy， 可以直接编译它并在本机上运行测试。
+</p>
+
+<p>
+核心代码如下
+</p>
+<pre>
+ssize_t sleepy_read (struct file *filp, char __user *buf, size_t count, loff_t *pos)
+{
+	printk(KERN_DEBUG "process %i (%s) going to sleep\n",
+			current-&gt;pid, current-&gt;comm);
+	wait_event_interruptible(wq, flag != 0);
+	flag = 0;
+	printk(KERN_DEBUG "awoken %i (%s)\n", current-&gt;pid, current-&gt;comm);
+	return 0; /* EOF */
+}
+
+ssize_t sleepy_write (struct file *filp, const char __user *buf, size_t count,
+		loff_t *pos)
+{
+	printk(KERN_DEBUG "process %i (%s) awakening the readers...\n",
+			current-&gt;pid, current-&gt;comm);
+	flag = 1;
+	wake_up_interruptible(&amp;wq);
+	return count; /* succeed, to avoid retrial */
+}
+</pre>
+
+<p>
+代码很简单，当read这个设备时，进程会在wait_event_interruptible()中检查
+(fail != 0)，如果不成功则进程进入休眠，
+</p>
+
+<p>
+另一个进程write这个设备时，会唤醒之前休眠的read进程。
+</p>
+
+<p>
+测试，打开两个终端A和B
+在A中：
+</p>
+<pre>
+	sudo insmod ./sleepy.ko
+	sudo mknod /dev/sleepy c 251 
+	cat /dev/sleepy
+	此时终端不动了，cat进程进入了休眠
+</pre>
+
+<p>
+在B中以root身份执行
+</p>
+<pre>
+	ls &gt; /dev/sleepy
+</pre>
+	
+<p>
+可以发现a中的cat进程成功退出了。 查看 dmesg | tail 得到：
+</p>
+<pre>
+[15625.488701] process 3283 (cat) going to sleep
+[15631.216986] process 3284 (ls) awakening the readers...
+[15631.216993] awoken 3283 (cat)
+</pre>
+
+
+<h2 id="toc_1.1">wait_event_interruptible(wq, flag != 0);</h2>
+
+<p>
+展开宏后得到如下代码
+</p>
+<pre>
+{							
+	int __ret = 0;							
+	if (!(condition)) {						
+		wait_queue_t __wait = {						
+			.private	= current,				
+			.func		= autoremove_wake_function,		
+			.task_list	= LIST_HEAD_INIT((__wait).task_list),	
+		}
+
+		for (;;) {							
+			prepare_to_wait(&amp;wq, &amp;__wait, TASK_INTERRUPTIBLE);	
+			if (condition)						
+				break;						
+			if (!signal_pending(current)) {				
+				schedule();					
+				continue;					
+			}
+			ret = -ERESTARTSYS;
+			break;
+		}								
+		finish_wait(&amp;wq, &amp;__wait);					
+	}
+	__ret;								
+}
+</pre>
+
+<p>
+主要做了几件事：
+1. wait中记录了当前进程(current)和wakeup时要执行的函数autoremove_wake_function
+2. prepare_to_wait, 将wait加入到wq的链表中, 并将当前进程的state设置为TASK_INTERRUPTIBLE
+3. schedule() 之后，当前进程失去CPU
+</p>
+
+<h2 id="toc_1.2">wake_up_interruptible(&amp;wq);</h2>
+
+<p>
+展开得到
+__wake_up(&amp;wq, TASK_INTERRUPTIBLE, 1, NULL)
+</p>
+
+<p>
+调用过程为
+__wake_up(wait_queue_head_t *q, unsigned int mode, int nr_exclusive, void *key)
+  -&gt; __wake_up_common(q, mode, nr_exclusive, 0, key);
+</p>
+
+<pre>
+static void __wake_up_common(wait_queue_head_t *q, unsigned int mode,
+			int nr_exclusive, int wake_flags, void *key)
+{
+	wait_queue_t *curr, *next;
+
+	list_for_each_entry_safe(curr, next, &amp;q-&gt;task_list, task_list) {
+		unsigned flags = curr-&gt;flags;
+
+		if (curr-&gt;func(curr, mode, wake_flags, key) &amp;&amp;
+				(flags &amp; WQ_FLAG_EXCLUSIVE) &amp;&amp; !--nr_exclusive)
+			break;
+	}
+}
+</pre>
+
+<p>
+对 wq.task_list 上的所有wait执行 wait-&gt;func函数，func是前面初始化__wait时添加的 autoremove_wake_function
+在wait-&gt;private中记录了等待进程的id， autoremove_wake_function 中拿到该进程， 对该进程做了以下几件事：
+</p>
+
+<p>
+autoremove_wake_function(wait_queue_t *wait, unsigned mode, int sync, void *key)
+  -&gt; default_wake_function(wait_queue_t *curr, unsigned mode, int wake_flags, void *key)
+</p>
+<blockquote>
+-&gt; try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
+-&gt; ttwu_remote(struct task_struct *p, int wake_flags)
+-&gt; ttwu_do_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
+p-&gt;state = TASK_RUNNING;
+</blockquote>
+	     
+<p>
+1. 确认该进程的状态state是TASK_INTERRUPTIBLE
+  (这里检查一次，所以wake_up()唤醒队列上所有的进程，而wake_up_interruptible()只唤醒队列上的"状态为TASK_INTERRUPTIBLE"的进程)
+2. 将进程的状态置为TASK_RUNNING
+3. 将wait从wq-&gt;task_list链表中删除
+</p>
+
+<h2 id="toc_1.3">重新调度，重新检测</h2>
+<p>
+之前休眠的进程状态现在变成TASK_RUNNING, 待调度器重新调度之后，该进程就可以重新
+运行。 紧接着运行在上面的schedule()之后
+</p>
+<pre>
+		for (;;) {							
+			prepare_to_wait(&amp;wq, &amp;__wait, TASK_INTERRUPTIBLE);	
+			if (condition)						
+				break;						
+			if (!signal_pending(current)) {				
+				schedule();					
+				continue;					
+			}
+			ret = -ERESTARTSYS;
+			break;
+		}								
+		finish_wait(&amp;wq, &amp;__wait);					
+</pre>
+<p>
+continue之后又是prepare_to_wait, 进程又开始准备等待。但如果紧接着看到condition
+为真的话，则跳出结束等待finish_wait()
+</p>
+
+<h2 id="toc_1.4">finish_wait();</h2>
+<pre>
+void finish_wait(wait_queue_head_t *q, wait_queue_t *wait)
+{
+	unsigned long flags;
+
+	__set_current_state(TASK_RUNNING);
+	if (!list_empty_careful(&amp;wait-&gt;task_list)) {
+		spin_lock_irqsave(&amp;q-&gt;lock, flags);
+		list_del_init(&amp;wait-&gt;task_list);
+		spin_unlock_irqrestore(&amp;q-&gt;lock, flags);
+	}
+}
+</pre>
+<p>
+finish_wait 主要做了两件事：
+1. 将进程状态置为TASK_RUNNING
+2. 将wait从wq-&gt;task_list链表中删除
+</p>
+
+</body>
+</html>
