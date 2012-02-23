@@ -1,19 +1,10 @@
 
 - [[开机磁盘检测 e2fsprogs]] 
-<<<<<<< HEAD
 - [[debin-reference 笔记]]
 - [[debian 修改 PATH]]
 - [[Debian 网络配置]]
-=======
  
- 
-== gnome安装软件后, 图标显示不正确 ==
-
-安装iptux之后, 不能立即显示图标
-
-gtk-update-icon-cache $PREFIX/share/icons/hicolor/
-
-$PREFIX 是软件安装路径
+- [[gnome安装软件后, 图标显示不正确]]
 
 == tools ==
 
@@ -37,11 +28,7 @@ $PREFIX 是软件安装路径
  
  == tips ==
  
-- 查看glibc版本号
+- [[查看glibc版本号]]
+- [[查看 gtk 版本]]
 
-locate libc.so //找到路径 
-  /lib/libc.so.6
-  
-函数 gnu_get_libc_version(), man一下它
 
->>>>>>> master

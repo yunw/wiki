@@ -1,0 +1,6 @@
+
+locate libc.so //找到路径 
+  /lib/libc.so.6
+  
+函数 gnu_get_libc_version(), man一下它
+
