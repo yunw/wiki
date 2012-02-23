@@ -1,0 +1,67 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>mx53 power</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+
+<h2 id="toc_0.1">mx53 CCM</h2>
+
+<p>
+功率门控(Power Gating)
+<a href="http://www.srvee.com/analog/apply/jypower_gatingdccqdghjsyj_59557.html">http://www.srvee.com/analog/apply/jypower_gatingdccqdghjsyj_59557.html</a>
+</p>
+
+<p>
+相比于时钟门控(Clock Gating)， 它不仅可以实时调节各个模块的运行频率、电压，
+还能在不需要的时候彻底 关闭，实现部分零功耗。换句话说，Llano APU的每个处理
+器核心、每个PCI-E控制器、 流处理器阵列、UVD3引擎都是可以完全关闭的。
+</p>
+
+<p>
+mx53 有3种电源模式： RUN, WAIT, STOP
+</p>
+
+<p>
+RUN:
+	ARM run in its normal mode.
+	The frequence and voltage can be changed by DVFS operation.
+	Clocks to blocks can be gated by configuring the corresponding CCM_CCGRn register bits.
+</p>
+	
+<p>
+WAIT:
+	ARM clock is gated.
+	All other clocks are functional and can be gated by programming their CCGR bits.
+</p>
+	
+<p>
+STOP:
+	All system clocks and DPLLs are stopped.
+</p>
+	
+<h2 id="toc_0.2">Linux Power Managment</h2>
+
+<p>
+Linux has two power mode: "standby", "mem"
+Android add one mode more to Linux: "on"
+</p>
+
+<p>
+与mx53平台对应，有：
+</p>
+
+<p>
+on 	- RUN
+standby - WAIT 不降电压，CKIH开，内部时钟继续工作，ARM 时钟停止，系统内容存于iram 
+mem 	- STOP 降低电压，关闭外部CKIH时钟，停止内部所有时钟，整个系统只有CKIL时钟在工作
+</p>
+
+<p>
+耗电量： on &gt; standby &gt; mem
+返回到on的时间： standby &lt; mem
+</p>
+
+</body>
+</html>

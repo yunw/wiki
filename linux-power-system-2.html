@@ -25,11 +25,11 @@
 <h2 id="toc_1.1">HAL</h2>
 
 <p>
-hardware/libhardware_legacy/power/power.c 可以找到操作上面三个文件的函数：
+hardware/libhardware_legacy/power/power.c
 </p>
 
 <pre>
-int set_screen_state(int on);
+int set_screen_state(int on); /* 0 on, 1 mem, 2 standby */
 int acquire_wake_lock(int lock, const char* id);
 int release_wake_lock(const char* id);
 </pre>
@@ -62,6 +62,28 @@ frameworks/base/core/java/android/os/Power.java
 <p>
 frameworks/base/core/java/android/os/PowerManager.java 
 这个类用来完成与wakelock相关的工作
+public class PowerManager
+{
+</p>
+<blockquote>
+public class WakeLock
+{
+...
+}
+public WakeLock newWakeLock(int flags, String tag)
+public void userActivity(long when, boolean noChangeLights)
+public void goToSleep(long time) 
+public void setBacklightBrightness(int brightness)
+public int getSupportedWakeLockFlags()
+public boolean isScreenOn()
+public void reboot(String reason)
+</blockquote>
+<p>
+}
+</p>
+
+<p>
+<a href="http://hi.baidu.com/ch_ff/blog/item/1a16a41040f4d21ab8127b26.html">http://hi.baidu.com/ch_ff/blog/item/1a16a41040f4d21ab8127b26.html</a>
 </p>
 
 <p>
