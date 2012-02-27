@@ -61,3 +61,8 @@ http://hi.baidu.com/ch_ff/blog/item/1a16a41040f4d21ab8127b26.html
 
 frameworks/base/services/java/com/android/server/PowerManagerService.java
 这是个专门用于电源管理的服务
+userActivity
+  -> setPowerState
+setPowerState + screenOffFinishedAnimatingLocked + preventScreenOn
+  -> setScreenStateLocked
+     -> Power.setScreenState(state)

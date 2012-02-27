@@ -89,7 +89,14 @@ public void reboot(String reason)
 <p>
 frameworks/base/services/java/com/android/server/PowerManagerService.java
 这是个专门用于电源管理的服务
+userActivity
+  -&gt; setPowerState
+setPowerState + screenOffFinishedAnimatingLocked + preventScreenOn
+  -&gt; setScreenStateLocked
 </p>
+<blockquote>
+-&gt; Power.setScreenState(state)
+</blockquote>
 
 </body>
 </html>
