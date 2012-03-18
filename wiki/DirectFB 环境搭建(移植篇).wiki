@@ -1,0 +1,95 @@
+== Environment ==
+
+export PREFIX=/opt/busybox
+export LDFLAGS="-L$PREFIX/lib -Wl,-rpath,$PREFIX/lib"
+export CFLAGS="-g -I$PREFIX/include"
+export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
+
+== freetype ==
+./configure --host=arm-linux --prefix=/opt/busybox
+make
+make install
+
+== jpeg ==
+./configure  --host=arm-linux --prefix=$PREFIX --enable-shared --enable-static
+修改生成的Makefile文件:
+       # The name of your C compiler:
+       CC= gcc  该成  CC=arm-linux-gcc (根据你自己交叉编译器的位置修改)
+       # library (.a) file creation command
+       AR= ar rc 该成  AR= arm-linux-ar rc  (同上)
+       # second step in .a creation (use &quot;touch&quot; if not needed)
+       AR2= ranlib 该成  AR2=arm-linux-ranlib (同上)
+       
+make
+make install-lib
+
+== zlib ==
+CC=arm-linux-gcc ./configure --prefix=$PREFIX --shared
+make
+make install
+
+== libpng ==
+./configure --host=arm-linux --prefix=$PREFIX
+make
+make install
+
+== DirectFB ==
+./configure --host=arm-linux \
+--prefix=$PREFIX \
+--with-gfxdrivers=none \
+--with-inputdrivers=linuxinput \
+--enable-png \
+--enable-jpeg \
+--disable-tiff \
+--enable-zlib \
+--enable-sdl=no \
+--enable-gif=no \
+--disable-video4linux \
+--disable-x11 \
+--enable-unique
+make
+make install
+
+
+
+./configure --prefix=/tmp/test \
+--host=arm-linux \
+--disable-x11 \
+--disable-network \
+--disable-jpeg \
+--disable-png \
+--disable-gif \
+--disable-video4linux \
+--disable-mmx \
+--disable-freetype \
+--with-inputdrivers=linuxinput \
+--with-gfxdrivers=none \
+ SYSCONFDIR=/
+ 
+{{{
+(*) DirectFB/Core: Single Application Core. (2012-02-03 05:44) 
+(!) DirectFB/fbdev/vt: KD_GRAPHICS failed!
+    --> Inappropriate ioctl for device
+(!) DirectFB/Core: Could not initialize 'system_core' core!
+    --> Initialization error!
+(#) DirectFBError [DirectFBCreate() failed]: Initialization error!
+}}}
+执行命令时加上参数 --dfb:no-vt  
+
+建立配置文件 /.directfbrc , 内容为
+{{{
+no-vt
+}}}
+
+
+
+== keyboard ==
+inputdrivers/linux_input/linux_input.c
+
+get_device_info
+{{{
+	  // add for hs13 keyboard
+	  for (i = KEY_RESERVED; i < KEY_MAX; i++)
+               if (test_bit( i, keybit ))
+                    num_keys++;
+}}}
