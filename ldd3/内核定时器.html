@@ -1,0 +1,189 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../style.css" />
+<title>内核定时器</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<p>
+<a href="http://simohayha.iteye.com/blog/507576">http://simohayha.iteye.com/blog/507576</a>
+</p>
+
+<p>
+schedule_timeout
+新建一个定时器，time_list中的data记录当前的task_struct指针current
+定时器到期时会调用process_timeout来唤醒之前记录的进程
+</p>
+
+<p>
+include/linux/wait.h 中有：
+wait_event_timeout(wq, condition, timeout)
+wait_event_interruptible_timeout(wq, condition, timeout)
+其实现原理就是最终调用schedule_timeout来调度，在失去cpu的这段时间内，进程可以被其他进程wake_up，可以在定时器到期后被唤醒。
+</p>
+
+<p>
+include/linux/delay.h 中的
+mdelay 和 ssleep 最底层都是使用 schedule_timeout 来休眠当前进程，定时到期后再唤醒进程
+</p>
+
+<h2 id="toc_0.1">定时器的时实现</h2>
+
+<pre>
+struct tvec {
+	struct list_head vec[TVN_SIZE]; /* 1 &lt;&lt; 6 = 64 */
+};
+
+struct tvec_root {
+	struct list_head vec[TVR_SIZE]; /* 1 &lt;&lt; 8 = 256 */
+};
+
+struct tvec_base {
+	spinlock_t lock;
+	struct timer_list *running_timer;
+	unsigned long timer_jiffies;
+	unsigned long next_timer;
+	struct tvec_root tv1;
+	struct tvec tv2;
+	struct tvec tv3;
+	struct tvec tv4;
+	struct tvec tv5;
+} ____cacheline_aligned;
+
+struct tvec_base boot_tvec_bases;
+</pre>
+<p>
+每个CPU都会有一个“级联表”，分为5个等级 tv1 ~ tv5，添加一个定时器最终就是将定时器挂到其中某一级的一个链表中
+</p>
+
+<p>
+static void internal_add_timer(struct tvec_base *base, struct timer_list *timer)
+{
+	unsigned long expires = timer-&gt;expires;
+	unsigned long idx = expires - base-&gt;timer_jiffies;
+	struct list_head *vec;
+</p>
+
+<p>
+	if (idx &lt; TVR_SIZE) {
+		int i = expires &amp; TVR_MASK;
+		vec = base-&gt;tv1.vec + i;
+	} else if (idx &lt; 1 &lt;&lt; (TVR_BITS + TVN_BITS)) {
+		int i = (expires &gt;&gt; TVR_BITS) &amp; TVN_MASK;
+		vec = base-&gt;tv2.vec + i;
+	} else if (idx &lt; 1 &lt;&lt; (TVR_BITS + 2 * TVN_BITS)) {
+		int i = (expires &gt;&gt; (TVR_BITS + TVN_BITS)) &amp; TVN_MASK;
+		vec = base-&gt;tv3.vec + i;
+	} else if (idx &lt; 1 &lt;&lt; (TVR_BITS + 3 * TVN_BITS)) {
+		int i = (expires &gt;&gt; (TVR_BITS + 2 * TVN_BITS)) &amp; TVN_MASK;
+		vec = base-&gt;tv4.vec + i;
+	} else if ((signed long) idx &lt; 0) {
+		/*
+</p>
+<ul>
+<li>
+Can happen if you add a timer with expires == jiffies,
+</li>
+<li>
+or you set a timer to go off in the past
+<br />		 */
+<br />		vec = base-&gt;tv1.vec + (base-&gt;timer_jiffies &amp; TVR_MASK);
+<br />	} else {
+<br />		int i;
+<br />		/* If the timeout is larger than 0xffffffff on 64-bit
+</li>
+<li>
+architectures then we use the maximum timeout:
+<br />		 */
+<br />		if (idx &gt; 0xffffffffUL) {
+<br />			idx = 0xffffffffUL;
+<br />			expires = idx + base-&gt;timer_jiffies;
+<br />		}
+<br />		i = (expires &gt;&gt; (TVR_BITS + 3 * TVN_BITS)) &amp; TVN_MASK;
+<br />		vec = base-&gt;tv5.vec + i;
+<br />	}
+<br />	/*
+</li>
+</ul>
+<li>
+Timers are FIFO:
+<br />	 */
+<br />	list_add_tail(&amp;timer-&gt;entry, vec);
+</li>
+<p>
+}
+“级联表”分为5个等级，上面可见添加时按照一定的规则来决定定时器该加到哪一级的哪一个链表中：
+1. 如果定时器在接下来的 0~255个jiffies中到期，则它被添加到tv1的256个链表之一。由expires的低8位决定具体是tv1的哪个链表
+2. 如果定时器在 256 ~ 1 &lt;&lt; (TVR_BITS + TVN_BITS) 个jiffies到期，则被添加到tv2的的64个链表之一(9~14位决定)
+3. 1 &lt;&lt; (TVR_BITS + TVN_BITS) ~ 1 &lt;&lt; (TVR_BITS + 2 * TVN_BITS)，被添加到tv3的64个链表之一(15~20位决定)
+4. 1 &lt;&lt; (TVR_BITS + 2 * TVN_BITS) ~ 1 &lt;&lt; (TVR_BITS + 3 * TVN_BITS)，被添加到tv4的64个链表之一(21~26位决定)
+5. 已经到期的定时器，则在下一个tick时被调度
+6. 更远的定时器，则添加到tv5的64个链表之一(27~31位决定)
+</p>
+
+
+
+<p>
+static inline void __run_timers(struct tvec_base *base)
+{
+	struct timer_list *timer;
+</p>
+
+<p>
+	spin_lock_irq(&amp;base-&gt;lock);
+	while (time_after_eq(jiffies, base-&gt;timer_jiffies)) {
+		struct list_head work_list;
+		struct list_head *head = &amp;work_list;
+		int index = base-&gt;timer_jiffies &amp; TVR_MASK;
+</p>
+
+<p>
+		/*
+</p>
+<ul>
+<li>
+Cascade timers:
+<br />		 */
+<br />		if (!index &amp;&amp;
+<br />			(!cascade(base, &amp;base-&gt;tv2, INDEX(0))) &amp;&amp;
+<br />				(!cascade(base, &amp;base-&gt;tv3, INDEX(1))) &amp;&amp;
+<br />					!cascade(base, &amp;base-&gt;tv4, INDEX(2)))
+<br />			cascade(base, &amp;base-&gt;tv5, INDEX(3));
+<br />		++base-&gt;timer_jiffies;
+<br />		list_replace_init(base-&gt;tv1.vec + index, &amp;work_list);
+<br />		while (!list_empty(head)) {
+<br />			void (*fn)(unsigned long);
+<br />			unsigned long data;
+</li>
+</ul>
+
+<p>
+			timer = list_first_entry(head, struct timer_list,entry);
+			fn = timer-&gt;function;
+			data = timer-&gt;data;
+</p>
+
+<p>
+			timer_stats_account_timer(timer);
+</p>
+
+<p>
+			base-&gt;running_timer = timer;
+			detach_timer(timer, 1);
+</p>
+
+<p>
+			spin_unlock_irq(&amp;base-&gt;lock);
+			call_timer_fn(timer, fn, data);
+			spin_lock_irq(&amp;base-&gt;lock);
+		}
+	}
+	base-&gt;running_timer = NULL;
+	spin_unlock_irq(&amp;base-&gt;lock);
+}
+当时间到期后，执行__run_timers
+</p>
+
+</body>
+</html>

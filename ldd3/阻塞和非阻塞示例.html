@@ -1,0 +1,84 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../style.css" />
+<title>阻塞和非阻塞示例</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+
+<p>
+scullpipe这个驱动程序很好的说明了阻塞和非阻塞两种情况读写的驱动层实现过程。
+</p>
+
+<p>
+1. 阻塞
+进程操作文件的默认方式就是阻塞的。 阻塞时进程会休眠，CPU切换到别的进程去，待等
+待条件成立时再唤醒被阻塞的进程。 具体过程在<a href="简单休眠.html">简单休眠</a>里阐述的很清楚了。
+</p>
+
+<p>
+2. 非阻塞
+设置文件描述符的O_NONBLOCK标志后，对此文件的操作都变为非阻塞的方式了。此时，当
+无数据读取或无空间写入时，进程不是休眠，而是直接返回-EAGAIN。
+</p>
+
+<p>
+使用fcntl设置O_NONBLOCK标识：
+	fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
+</p>
+	
+<p>
+ldd3配套example里有nbtest程序，可以用这个程序来查看和测试非阻塞的运行过程：
+</p>
+
+<p>
+开两个终端A，B
+</p>
+
+<p>
+A：
+</p>
+<pre>
+strace ../misc-progs/nbtest &lt; /dev/scullpipe 
+</pre>
+
+<p>
+B：
+</p>
+<pre>
+ls -l &gt; /dev/scullpipe
+</pre>
+
+<p>
+可以看到终端里打印出的结果：
+</p>
+<pre>
+read(0, 0x80498a0, 4096)                = -1 EAGAIN (Resource temporarily unavailable)
+rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
+rt_sigaction(SIGCHLD, NULL, {SIG_DFL, [], 0}, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+nanosleep({1, 0}, 0xbfdddb44)           = 0
+read(0, 0x80498a0, 4096)                = -1 EAGAIN (Resource temporarily unavailable)
+rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
+rt_sigaction(SIGCHLD, NULL, {SIG_DFL, [], 0}, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+nanosleep({1, 0}, 0xbfdddb44)           = 0
+read(0, "\346\200\273\347\224\250\351\207\217 324\n-rw-r--r-- 1 root "..., 4096) = 259
+write(1, "\346\200\273\347\224\250\351\207\217 324\n-rw-r--r-- 1 root "..., 259总用量 324
+-rw-r--r-- 1 root root   4012  2月 11 15:51 minicom.log
+-rw------- 1 root root  97146  7月 19 2011 pppoe_3.8-3_i386.deb
+drwxr-xr-x 8  500  500   4096  6月 30 2008 rp-pppoe-3.10
+-rw------- 1 root root 215288  7月 19 2011 rp-pppoe-3.10.tar.gz
+) = 259
+rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
+rt_sigaction(SIGCHLD, NULL, {SIG_DFL, [], 0}, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+</pre>
+  
+<p>
+上面的结果中可以看到read时一直会出错返回-EAGAIN，在B终端中向scullpipe写入数据
+后，A终端中的read才成功并将东西打印出来
+</p>
+
+</body>
+</html>

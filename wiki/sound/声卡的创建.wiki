@@ -1,0 +1,53 @@
+
+http://blog.csdn.net/droidphone/article/details/6289712
+
+1. 创建并实例化一个声卡结构(struct snd_card)
+
+
+int snd_card_create(int idx, const char *xid,
+		    struct module *module, int extra_size,
+		    struct snd_card **card_ret)
+	- idx : 声卡编号
+	- xid : 声号标识符
+	- module : THIS_MODULE
+	- extra_size : 在snd_card结构体后面追加分配额外的空间，card->private_data指向这个空间
+		       这部分空间可以作为声卡的专有数据。
+	- card_ret : 返回snd_card指针
+   1) 创建 snd_card 结构
+   2) 如果idx为负值，则选择一个编号idx给这个声卡
+   3) 初始化 snd_card 成员。其中有 card->devices 这是一个链表，用于记录挂载这张声卡上的所有设备
+   4) 创建controls
+   5) 创建proc文件系统中的结点：/proc/asound/card[idx]
+   
+2. 创建声卡上的设备
+
+一个声卡上可以有多个功能部件，每个部件都作为一个逻辑设备存在。声卡创建好了之后
+再创建它上面的各个逻辑设备，如：PCM/Mixer/MIDI/timer/control/jack 等。
+每个设备的创建最终都调用 snd_device_new() 来创建一个 snd_device，并挂接到
+snd_card的devices链表上。
+
+	* PCM     -- snd_pcm_new()
+	* RAWMIDI -- snd_rawmidi_new()
+	* CONTROL -- snd_ctl_create()
+	* TIMER   -- snd_timer_new()
+	* INFO    -- snd_card_proc_new()
+	* JACK    -- snd_jack_new()
+
+查看PCM设备的创建过程： snd_pcm_new()
+	1) 创建 struct snd_pcm 并根据参数初始化它
+	2) 创建PCM类型的设备snd_device_new(card, SNDRV_DEV_PCM, pcm, &ops) 
+		   将 struct snd_pcm 结构挂到 dev->device_data
+			dev->device_data = pcm;
+			dev->ops = ops;
+		   ops中有注册/断开/释放PCM设备(snd_pcm)的操作函数。
+           最后把这个snd_device设备挂载到声卡的设备链表上。
+	
+
+3. 注册声卡
+
+int snd_card_register(struct snd_card *card)
+
+这个函数注册声卡上的所有设备，应该在声卡初始化的最后调用
+	
+	1) 创建 /sys/class/sound/card[idx]
+	2) 注册声卡链表上的所有设备(设备创建时已经设置好了注册的回调函数snd_device_ops)
