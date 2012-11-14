@@ -12,12 +12,35 @@
 
 
 <p>
-IOMUXC是mx53的IO口复用功能控制器，mx53的每个引脚都有8个可选功能(称为ALT模式)。
-不同的模块需要对引脚做一些不同的设置（如上拉，锁存等）。
+IOMUXC是mx53的IO口复用功能控制器. IOMUXC由许多个IOMUXC基础单元构成，每个基础单元控制一个引脚。
 </p>
 
 <p>
-IOMUXC由许多个IOMUXC基础单元构成，每个基础单元控制一个引脚。
+o mx53的每个引脚都有8个可选功能(称为ALT模式)。
+  寄存器IOMUXC_SW_MUX_CTL_PAD_XXX可以用来为每个IO口选择不同的功能。
+</p>
+  
+<p>
+o 引脚有一些属性可以设置：迟滞，上拉/锁存，上拉电阻大小，开漏，输出电流 等
+  寄存器IOMUXC_SW_PAD_CTL_PAD_XXX用来配置各IO的属性
+</p>
+
+
+<p>
+#define _MX53_PAD_GPIO_16__GPIO7_11		IOMUX_PAD(0x6CC, 0x33C, 1, 0x0, 0, 0)
+</p>
+
+<p>
+#define IOMUX_PAD(_pad_ctrl_ofs, _mux_ctrl_ofs, _mux_mode, _sel_input_ofs,  _sel_input, _pad_ctrl)
+</p>
+		
+<p>
+0x6cc _pad_ctrl_ofs
+0x33c _mux_ctrl_ofs - MUX_CTL寄存器的偏移，这个寄存器用来选择IO口的功能。
+1                     MUX_CTL选择第1个功能，即GPIO
+0x0   _sel_input_ofs
+0     _sel_input
+0     _pad_ctrl     - 设置该引脚的一些属性：迟滞，上拉/锁存，上拉电阻大小，开漏，输出电流 等
 </p>
 
 </body>

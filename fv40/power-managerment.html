@@ -1,0 +1,74 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../style.css" />
+<title>power-managerment</title>
+<meta http-equiv="Content-Type" content="text/html; charset=" />
+</head>
+<body>
+
+<p>
+o power-on
+==========
+</p>
+
+<p>
+o power-off
+===========
+</p>
+
+<p>
+1. DA9052关闭电源输出
+</p>
+
+<p>
+写DA9053寄存器R15(SYS_EN=0, PWR_EN=0), R142=0
+</p>
+
+<p>
+2. PIC检测到SYS_ON_OFF_CTL 被拉低, 则PIC关闭DCDC3V3_ON(各外设电源控制)
+</p>
+
+<p>
+注意:
+</p>
+
+<p>
+直至QA1, SYS_ON_OFF_CTL信号线上没有下拉电阻, 所以在MX53彻底关机之前, 要在
+SYS_ON_OFF_CTL上给出至少20ms的低电平, 用以通知PIC系统关机. 
+</p>
+
+<p>
+待SYS_ON_OFF_CTL信号线上加上了下拉电阻, 则关机时无需MX53对SYS_ON_OFF_CTL做任何
+事情.
+</p>
+
+<p>
+o suspend 
+=========
+</p>
+
+<p>
+调用各个驱动的suspend回调函数, 休眠各设备.
+</p>
+
+<p>
+01. lcd
+02. audio codec (wm8960)
+03. pmic (da9053)
+04. keyboard
+05. touch
+06. wifi
+07. ddr3 sdram
+08. eMMC
+09. sd
+10. usb
+11. cpu (i.MX53)
+</p>
+
+<p>
+o resume 
+========
+</p>
+
+</body>
+</html>

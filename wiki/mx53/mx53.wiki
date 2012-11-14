@@ -1,0 +1,13 @@
+
+8.7 [[Audio Subsystem]]
+
+
+
+
+| Status          | SYS_ON_OFF_CTL | WDT_OUTPUT |
+|-----------------+----------------+------------|
+| Running         |       1        |     1      |
+| Suspend         |       0        |     1      |
+| WatchDog Timout |       1        |     0      |
+| PowerOff        |       0        |     0      |
+

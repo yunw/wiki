@@ -6,62 +6,51 @@
 </head>
 <body>
 <h2 id="toc_0.1">Environment</h2>
-
-<p>
+<pre>
 export PREFIX=/opt/busybox
 export LDFLAGS="-L$PREFIX/lib -Wl,-rpath,$PREFIX/lib"
 export CFLAGS="-g -I$PREFIX/include"
 export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
-</p>
+</pre>
 
 <h2 id="toc_0.2">freetype</h2>
-<p>
+<pre>
 ./configure --host=arm-linux --prefix=/opt/busybox
 make
 make install
-</p>
+</pre>
 
 <h2 id="toc_0.3">jpeg</h2>
-<p>
-./configure  --host=arm-linux --prefix=$PREFIX --enable-shared --enable-static
+<pre>
+./configure --host=arm-linux CC=arm-linux-gcc --prefix=$PREFIX --enable-shared --enable-static
 修改生成的Makefile文件:
-</p>
-<ol>
-<li>
-The name of your C compiler:
-<br />       CC= gcc  该成  CC=arm-linux-gcc (根据你自己交叉编译器的位置修改)
-</li>
-<li>
-library (.a) file creation command
-<br />       AR= ar rc 该成  AR= arm-linux-ar rc  (同上)
-</li>
-<li>
-second step in .a creation (use &amp;quot;touch&amp;quot; if not needed)
-<br />       AR2= ranlib 该成  AR2=arm-linux-ranlib (同上)
-</li>
-</ol>
+       # The name of your C compiler:
+       CC= gcc  该成  CC=arm-linux-gcc (根据你自己交叉编译器的位置修改)
+       # library (.a) file creation command
+       AR= ar rc 该成  AR= arm-linux-ar rc  (同上)
+       # second step in .a creation (use &amp;quot;touch&amp;quot; if not needed)
+       AR2= ranlib 该成  AR2=arm-linux-ranlib (同上)
        
-<p>
 make
 make install-lib
-</p>
+</pre>
 
 <h2 id="toc_0.4">zlib</h2>
-<p>
+<pre>
 CC=arm-linux-gcc ./configure --prefix=$PREFIX --shared
 make
 make install
-</p>
+</pre>
 
 <h2 id="toc_0.5">libpng</h2>
-<p>
+<pre>
 ./configure --host=arm-linux --prefix=$PREFIX
 make
 make install
-</p>
+</pre>
 
 <h2 id="toc_0.6">DirectFB</h2>
-<p>
+<pre>
 ./configure --host=arm-linux \
 --prefix=$PREFIX \
 --with-gfxdrivers=none \
@@ -74,29 +63,20 @@ make install
 --enable-gif=no \
 --disable-video4linux \
 --disable-x11 \
---enable-unique
+--enable-unique \
+--sysconfdir=/etc
+
 make
 make install
-</p>
+</pre>
 
+<h2 id="toc_0.7">Directfb example</h2>
+<pre>
+./configure --host=arm-linux --prefix=$PREFIX
+make
+make install
+</pre>
 
-
-<p>
-./configure --prefix=/tmp/test \
---host=arm-linux \
---disable-x11 \
---disable-network \
---disable-jpeg \
---disable-png \
---disable-gif \
---disable-video4linux \
---disable-mmx \
---disable-freetype \
---with-inputdrivers=linuxinput \
---with-gfxdrivers=none \
- SYSCONFDIR=/
-</p>
- 
 <pre>
 (*) DirectFB/Core: Single Application Core. (2012-02-03 05:44) 
 (!) DirectFB/fbdev/vt: KD_GRAPHICS failed!
@@ -114,11 +94,10 @@ make install
 </p>
 <pre>
 no-vt
+linux-input-devices=/dev/event1
 </pre>
 
-
-
-<h2 id="toc_0.7">keyboard</h2>
+<h2 id="toc_0.8">keyboard 需要做一点修改</h2>
 <p>
 inputdrivers/linux_input/linux_input.c
 </p>

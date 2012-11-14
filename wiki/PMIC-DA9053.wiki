@@ -19,4 +19,4 @@ ADC 可用于如下输入：
 
 - [[da9053-touchscreen]]
 
-
+- [[OTP-value]]

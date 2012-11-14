@@ -1,0 +1,11 @@
+
+1. 名词解释
+
+MRS - Mode Register Setup. DDR上有模式寄存器(MR#)，上电后要进行初始设置。
+EMRS - Extended Mode Register Setup.  相比SDRAM，DDR在MRS之前多了EMRS，扩展模式寄存器控制DLL的有效/禁止，输出驱动强度，QFC有效/无效等。
+
+2. 信号
+
+CK/CK# -
+DQS - 
+

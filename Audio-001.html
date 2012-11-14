@@ -1,0 +1,120 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="style.css" />
+<title>Audio-001</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<p>
+概述
+====
+</p>
+
+<p>
+PCM是alsa的中间层，每个驱动只需要实现一些底层操作硬件的功能。需要包含头文件：
+&lt;sound/pcm.h&gt;和&lt;sound/pcm_params.h&gt;。
+</p>
+
+<p>
+每张卡最多有4个PCM，每个PCM对应一个pcm设备文件(/dev/snd/pcmC0D0p)。PCM个数的限
+制来源于Linux设备号剩下的可用位。如果将来Linux设备号是64位的，那每张卡就可以有
+更多个PCM了。
+</p>
+
+<p>
+一个pcm包含playback和capture流(stream)。而每个pcm流又可以包含一个或多个子流
+(subsream)。有一些声卡支持多个playback功能，此时每次open时，一个空闲的substream
+会被选中并打开。这意味着，当只有一个substream并且它已经被打开时，open会被阻塞或
+返回-EAGAIN(这取决于文件的打开方式)。
+</p>
+
+<p>
+构造
+====
+</p>
+
+<p>
+int snd_pcm_new(struct snd_card *card, const char *id, int device,
+		int playback_count, int capture_count,
+</p>
+<blockquote>
+struct snd_pcm ** rpcm)
+</blockquote>
+<p>
+创建一个PCM	        
+</p>
+<ul>
+<li>
+card : 这个PCM所属于的card
+</li>
+<li>
+id : PCM名
+</li>
+<li>
+device : 这个PCM的序号，从0开始。创建多个PCM实例时指定不同的值。
+</li>
+<li>
+playback_count : playback的子流substream个数
+</li>
+<li>
+capture_count : capture 的子流substream个数
+</li>
+<li>
+rpcm : 返回创建的PCM实例
+</li>
+</ul>
+	
+
+<p>
+如果一个芯片支持多个playback和capture，创建PCM时可以指定相应的个数。
+但是在open/close等回调函数中必须能区分的处理它们。当我们需要知道当前处理的是哪
+个substream时，可以从struct snd_pcm_substream结构中得到信息：
+</p>
+	
+<p>
+	struct snd_pcm_substream *substream; 
+	int index = substream-&gt;number;
+</p>
+
+<p>
+创建完PCM之后就要为每个pcm stream设置操作函数了：
+</p>
+
+<p>
+	snd_pcm_set_ops(pcm, SNDRV_PCM_STREAM_PLAYBACK, &amp;soc_pcm_ops);
+	snd_pcm_set_ops(pcm, SNDRV_PCM_STREAM_CAPTURE, &amp;soc_pcm_ops);
+</p>
+	
+<p>
+Runtime指针 - PCM的核心	
+=======================
+</p>
+
+<p>
+当PCM的substream被打开，会为它创建一个PCM runtime实例(snd_pcm_runtime)
+并将指针存于substream-&gt;runtime。这个 指针索引的信息包含了我们需要的大部分
+PCM信息。&lt;sound/pcm.h&gt;
+</p>
+
+<p>
+硬件描述
+========
+</p>
+
+<p>
+struct snd_pcm_hardware 包含基本的硬件配置，除此之外，还需要定义open回调。注意
+runtime持有硬件描述descriptor的复本，而不是一个指向descriptor的指针。所以在
+open回调中我们可以按需要修改runtime中的这个硬件描述复本(runtime-&gt;hw)。
+</p>
+	
+<p>
+	struct snd_pcm_runtime *runtime = substream-&gt;runtime;
+	...
+	runtime-&gt;hw = snd_mychip_playback_hw;
+	if (chip-&gt;model == VERY_OLD_ONE)
+		runtime-&gt;hw.channels_max = 1;
+</p>
+
+</body>
+</html>

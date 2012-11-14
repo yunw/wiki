@@ -3,6 +3,7 @@
 
 make ARCH=arm menuconfig
 
+{{{
 Busybox Settings  --->        
 	General Configuration  --->
 		[*] Don't use /usr     
@@ -10,15 +11,20 @@ Busybox Settings  --->
 		### 静态编译就选上，否则默认是动态链接
 		[*] Build BusyBox as a static binary (no shared libs)
 		(arm-linux-) Cross Compiler prefix
-		
+}}}
 		
 make ARCH=arm
+
 # 安装到_install目录下
+{{{
 make install 
+}}}
 
 # 创建文件系统
+{{{
 cd _install
 mkdir lib dev proc etc mnt usr bin sbin tmp sys
+}}}
 
 # 若是动态编译，还需要复制动态库
 
@@ -97,6 +103,8 @@ can't open /dev/tty4: No such file or directory
 }}}
 
 解决办法：
+{{{
  ln -sf /dev/null /dev/tty2
  ln -sf /dev/null /dev/tty3
  ln -sf /dev/null /dev/tty4
+}}}

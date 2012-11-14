@@ -12,7 +12,7 @@
 make ARCH=arm menuconfig
 </p>
 
-<p>
+<pre>
 Busybox Settings  ---&gt;        
 	General Configuration  ---&gt;
 		[*] Don't use /usr     
@@ -20,30 +20,30 @@ Busybox Settings  ---&gt;
 		### 静态编译就选上，否则默认是动态链接
 		[*] Build BusyBox as a static binary (no shared libs)
 		(arm-linux-) Cross Compiler prefix
-</p>
-		
+</pre>
 		
 <p>
 make ARCH=arm
 </p>
+
 <ol>
 <li>
 安装到_install目录下
+<pre>
+make install 
+</pre>
 </li>
 </ol>
-<p>
-make install 
-</p>
 
 <ol>
 <li>
 创建文件系统
-</li>
-</ol>
-<p>
+<pre>
 cd _install
 mkdir lib dev proc etc mnt usr bin sbin tmp sys
-</p>
+</pre>
+</li>
+</ol>
 
 <ol>
 <li>
@@ -145,10 +145,12 @@ can't open /dev/tty4: No such file or directory
 
 <p>
 解决办法：
+</p>
+<pre>
  ln -sf /dev/null /dev/tty2
  ln -sf /dev/null /dev/tty3
  ln -sf /dev/null /dev/tty4
-</p>
+</pre>
 
 </body>
 </html>

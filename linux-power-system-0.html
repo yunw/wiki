@@ -7,6 +7,63 @@
 <body>
 
 <p>
+enter_state()
+  |-&gt; sys_sync();
+  |-&gt; suspend_prepare(void)
+  |     |-&gt; pm_prepare_console();
+  |     |-&gt; pm_notifier_call_chain(PM_SUSPEND_PREPARE);
+  |     |-&gt; usermodehelper_disable();
+  |     |-&gt; suspend_freeze_processes();
+  |     |   `-&gt; freeze_processes()
+  |     |       |-&gt; try_to_freeze_tasks(true)
+  |     |       `-&gt; try_to_freeze_tasks(false)
+  |     |-&gt; suspend_thaw_processes();
+  |     |-&gt; usermodehelper_enable();
+  |     |-&gt; pm_notifier_call_chain(PM_POST_SUSPEND);
+  |     `-&gt; pm_restore_console();
+  |-&gt; suspend_devices_and_enter(state);
+  |     |-&gt; suspend_ops-&gt;begin(state);
+  |     |-&gt; suspend_console();
+  |     |-&gt; saved_mask = clear_gfp_allowed_mask(GFP_IOFS);
+  |     |-&gt; suspend_test_start();
+  |     |-&gt; error = dpm_suspend_start(PMSG_SUSPEND);
+  |     |-&gt; suspend_enter(state);
+<table class='center'>
+<tr>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+</table>
+  |     |-&gt; *************************************
+  |     |-&gt; suspend_test_start();
+  |     |-&gt; dpm_resume_end(PMSG_RESUME);
+  |     |-&gt; suspend_test_finish("resume devices");
+  |     |-&gt; set_gfp_allowed_mask(saved_mask);
+  |     |-&gt; resume_console();
+<table class='center'>
+<tr>
+<td>&nbsp;</td>
+</tr>
+</table>
+  |     |-&gt; suspend_ops-&gt;end();
+  |     |-&gt; suspend_ops-&gt;recover();
+  `-&gt; suspend_finish();
+</p>
+  
+
+<p>
+suspend_enter(state)
+	1. suspend_ops-&gt;prepare();
+	2. dpm_suspend_noirq(PMSG_SUSPEND);
+</p>
+
+
+<p>
 <a href="http://blog.csdn.net/lizhiguo0532/article/details/6453546">http://blog.csdn.net/lizhiguo0532/article/details/6453546</a>
 </p>
 

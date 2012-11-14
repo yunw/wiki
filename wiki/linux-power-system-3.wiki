@@ -1,0 +1,47 @@
+
+
+ * The driver model core calls device_pm_add() when a device is registered.
+ * This will intialize the embedded device_pm_info object in the device
+ * and add it to the list of power-controlled devices. sysfs entries for
+ * controlling device power management will also be added.
+ *
+ * A separate list is used for keeping track of power info, because the power
+ * domain dependencies may differ from the ancestral dependencies that the
+ * subsystem list maintains.
+ 
+
+驱动模型核心在注册一个设备时会调用device_pm_add()，这将初始化嵌入在设备结构中的device_pm_info对象，
+然后将此对象加入到电源管理系统控制的设备链表(dpm_list)上。sysfs中的电源管理入口也在此时添加。
+
+各驱动会注册一个dev_pm_ops结构，其中是具体设备在电源管理操作时的操作函数：
+struct dev_pm_ops {
+	int (*prepare)(struct device *dev);
+	void (*complete)(struct device *dev);
+	int (*suspend)(struct device *dev);
+	int (*resume)(struct device *dev);
+	int (*freeze)(struct device *dev);
+	int (*thaw)(struct device *dev);
+	int (*poweroff)(struct device *dev);
+	int (*restore)(struct device *dev);
+	int (*suspend_noirq)(struct device *dev);
+	int (*resume_noirq)(struct device *dev);
+	int (*freeze_noirq)(struct device *dev);
+	int (*thaw_noirq)(struct device *dev);
+	int (*poweroff_noirq)(struct device *dev);
+	int (*restore_noirq)(struct device *dev);
+	int (*runtime_suspend)(struct device *dev);
+	int (*runtime_resume)(struct device *dev);
+	int (*runtime_idle)(struct device *dev);
+};
+
+dpm_prepare(state);
+对dpm_list上的每个设备执行device_prepare(dev, state). 即执行pm->prepare()回调。
+执行顺序依次是：dev->bus, dev->type, dev->class
+		error = dev->bus->pm->prepare(dev);
+		error = dev->type->pm->prepare(dev);
+		error = dev->class->pm->prepare(dev);
+
+dpm_suspend(state);
+对dpm_list上的每个设备执行device_suspend(dev);
+	__device_suspend(dev, pm_transition, false);
+依次执行 class, type, bus 上此设备的dev_pm_ops.suspend()回调

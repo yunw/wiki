@@ -1,0 +1,462 @@
+
+同事在调试一个外设时发现：
+a. 系统正常运行的情况下，使用这个设备会触发中断并调用它的中断处理函数。
+b. 系统休眠之后，使用这个设备可以唤醒系统，但中断处理函数却没有被调用。
+
+能够唤醒系统，说明中断一定是触发了。另发现小板上的键盘是可以的，休眠后按键可以
+调到keyboard的中断处理函数。
+
+跟踪这个问题，发现以下几点：
+
+1. Linux在系统休眠时会调用dpm_suspend_noirq()-> suspend_device_irqs()。
+
+  当系统休眠时，设备驱动需要禁止接收中断，suspend_device_irqs()屏蔽所有正在
+  使用的中断(置IRQ_DISABLED标志)，timer中断除外，因为Timer中段标志中设置了
+  IRQF_NO_SUSPEND。如果禁止原因是suspend，则设置标志中的IRQ_SUSPENDED位。
+
+  所以休眠之后，desc->status |= IRQ_DISABLED;
+  
+2. 中断触发类型有很多种，比如边沿触发和电平触发。在Linux里分别用
+   handle_edge_irq() / handle_level_irq() 来处理它们。
+
+  handle_edge_irq() : 
+	* 如果中断有标志 IRQ_INPROGRESS 或 IRQ_DISABLED，说明此中断已经在处理或
+	  已经禁止。边沿触发锁存这次中断请求(置标记IRQ_PENDING)，然后退出。
+	  由于中断请求已经锁存了，所以中断处理函数一定会被调用到。
+
+  handle_level_irq() : 
+	* 电平都会延续一段时间，在这段时间内电平中断会一直被触发。因此进入电平
+	  中断处理之前会先屏蔽该中断，到最后处理完毕之后再开启。
+	  
+	*
+	电平触发不允许嵌套。正在处理的中断(IRQ_INPROGRESS)或被禁止的中断都不会
+	  请求。
+	  
+	* handle_level_irq()中如果发现中断是IRQ_DISABLED，则会直接退出。
+	 
+	if (unlikely(!action || (desc->status & IRQ_DISABLED)))
+		goto out_unlock;
+	
+3. 平台处理函数在初始化的时候将所有GPIO都设置为电平触发
+	set_irq_handler(gpio, handle_level_irq)
+	
+   而键盘设备自己注册了handle_edge_irq。
+   
+那么，为什么边沿处发的时候要处理IRQ_DISABLED的中断呢？
+   
+   
+   
+
+void
+handle_edge_irq(unsigned int irq, struct irq_desc *desc)
+{
+	raw_spin_lock(&desc->lock);
+
+	desc->status &= ~(IRQ_REPLAY | IRQ_WAITING);
+
+	/*
+	 * If we're currently running this IRQ, or its disabled,
+	 * we shouldn't process the IRQ. Mark it pending, handle
+	 * the necessary masking and go out
+	 */
+	if (unlikely((desc->status & (IRQ_INPROGRESS | IRQ_DISABLED)) ||
+		    !desc->action)) {
+		desc->status |= (IRQ_PENDING | IRQ_MASKED);
+		mask_ack_irq(desc);
+		goto out_unlock;
+	}
+	kstat_incr_irqs_this_cpu(irq, desc);
+
+	/* Start handling the irq */
+	desc->irq_data.chip->irq_ack(&desc->irq_data);
+
+	/* Mark the IRQ currently in progress.*/
+	desc->status |= IRQ_INPROGRESS;
+
+	do {
+		struct irqaction *action = desc->action;
+		irqreturn_t action_ret;
+
+		if (unlikely(!action)) {
+			mask_irq(desc);
+			goto out_unlock;
+		}
+
+		/*
+		 * When another irq arrived while we were handling
+		 * one, we could have masked the irq.
+		 * Renable it, if it was not disabled in meantime.
+		 */
+		if (unlikely((desc->status &
+			       (IRQ_PENDING | IRQ_MASKED | IRQ_DISABLED)) ==
+			      (IRQ_PENDING | IRQ_MASKED))) {
+			unmask_irq(desc);
+		}
+
+		desc->status &= ~IRQ_PENDING;
+		raw_spin_unlock(&desc->lock);
+		action_ret = handle_IRQ_event(irq, action);
+		if (!noirqdebug)
+			note_interrupt(irq, desc, action_ret);
+		raw_spin_lock(&desc->lock);
+
+	} while ((desc->status & (IRQ_PENDING | IRQ_DISABLED)) == IRQ_PENDING);
+
+	desc->status &= ~IRQ_INPROGRESS;
+out_unlock:
+	raw_spin_unlock(&desc->lock);
+}
+
+
+3. 休眠时的中断处理
+
+dpm_suspend_noirq()
+  -> suspend_device_irqs()
+
+总共有nr_irqs个中断号，循环，取每个中断号的断描述符irq_desc，
+调用 __disable_irq(desc, irq, true); 禁止这个中断。
+
+/**
+ * suspend_device_irqs - disable all currently enabled interrupt lines
+ *
+ * During system-wide suspend or hibernation device drivers need to be prevented
+ * from receiving interrupts and this function is provided for this purpose.
+ * It marks all interrupt lines in use, except for the timer ones, as disabled
+ * and sets the IRQ_SUSPENDED flag for each of them.
+ */
+ 
+// suspend_device_irqs - 禁止所有当前已使能的中断
+// 
+// 当系统休眠时，设备驱动需要禁止接收中断，此函数用于这种目的。它将屏蔽所有在
+// 使用的中断(置IRQ_DISABLED标志)，timer中断除外，因为Timer中段标志中设置了
+// IRQF_NO_SUSPEND。如果禁止原因是suspend，则设置标志中的IRQ_SUSPENDED位。
+
+void suspend_device_irqs(void)
+{
+	struct irq_desc *desc;
+	int irq;
+
+	for_each_irq_desc(irq, desc) {
+		unsigned long flags;
+
+		raw_spin_lock_irqsave(&desc->lock, flags);
+		__disable_irq(desc, irq, true);
+		raw_spin_unlock_irqrestore(&desc->lock, flags);
+	}
+
+	for_each_irq_desc(irq, desc)
+		if (desc->status & IRQ_SUSPENDED)
+			synchronize_irq(irq);
+}
+
+void __disable_irq(struct irq_desc *desc, unsigned int irq, bool suspend)
+{
+	if (suspend) {
+		//如果置了IRQF_NO_SUSPEND标志的话，则此中断在休眠时不会禁止
+		if (!desc->action || (desc->action->flags & IRQF_NO_SUSPEND))
+			return;
+		desc->status |= IRQ_SUSPENDED;
+	}
+
+	if (!desc->depth++) { //防止嵌套和重复禁止
+		desc->status |= IRQ_DISABLED;
+		desc->irq_data.chip->irq_disable(&desc->irq_data);
+		//调用平台相关代码禁止该中断。
+		//我跟踪mx53的执行过程，这个指针指向default_disable()，
+		//而这个函数什么都不做。
+	}
+}
+ 
+ 
+ // 下面再来看一下中断触发后处理的流程，看看上面的设置有什么影响！！！
+
+// arch/arm/kernel/irq.c
+
+asm_do_IRQ()
+  -> generic_handle_irq(irq);
+     -> desc->handle_irq(irq, desc);
+
+set_irq_handler(i, handle_level_irq);
+
+// kernel/irq/chip.c
+
+handle_level_irq()
+  -> handle_IRQ_event(irq, action);
+
+/**
+ *	handle_level_irq - Level type irq handler
+ *	@irq:	the interrupt number
+ *	@desc:	the interrupt description structure for this irq
+ *
+ *	Level type interrupts are active as long as the hardware line has
+ *	the active level. This may require to mask the interrupt and unmask
+ *	it after the associated handler has acknowledged the device, so the
+ *	interrupt line is back to inactive.
+ */
+void
+handle_level_irq(unsigned int irq, struct irq_desc *desc)
+{
+	struct irqaction *action;
+	irqreturn_t action_ret;
+
+	raw_spin_lock(&desc->lock);
+	mask_ack_irq(desc);
+
+	if (unlikely(desc->status & IRQ_INPROGRESS))
+		goto out_unlock;
+	desc->status &= ~(IRQ_REPLAY | IRQ_WAITING);
+	kstat_incr_irqs_this_cpu(irq, desc);
+
+	/*
+	 * If its disabled or no action available
+	 * keep it masked and get out of here
+	 */
+	action = desc->action;
+	// 如果设置了IRQ_DISABLED，就直接跳出来。
+	// 在suspend时禁止所有中断，就会将所有中断描述标志置IRQ_DISABLED
+	if (unlikely(!action || (desc->status & IRQ_DISABLED)))
+		goto out_unlock;
+
+	desc->status |= IRQ_INPROGRESS;
+	raw_spin_unlock(&desc->lock);
+
+	action_ret = handle_IRQ_event(irq, action);
+	if (!noirqdebug)
+		note_interrupt(irq, desc, action_ret);
+
+	raw_spin_lock(&desc->lock);
+	desc->status &= ~IRQ_INPROGRESS;
+
+	if (!(desc->status & (IRQ_DISABLED | IRQ_ONESHOT)))
+		unmask_irq(desc);
+out_unlock:
+	raw_spin_unlock(&desc->lock);
+}
+
+request_threaded_irq()
+request_irq()
+
+
+
+handle_nested_irq
+handle_simple_irq
+
+handle_level_irq
+
+/**
+ *	handle_level_irq - Level type irq handler
+ *	@irq:	the interrupt number
+ *	@desc:	the interrupt description structure for this irq
+ *
+ *	Level type interrupts are active as long as the hardware line has
+ *	the active level. This may require to mask the interrupt and unmask
+ *	it after the associated handler has acknowledged the device, so the
+ *	interrupt line is back to inactive.
+ */
+
+// 电平信号都会持续一段时间，或长或段。在这段时间内电平中断会一直被触发。
+// 所以需要在执行中断处理之前屏蔽这个中断，待处理函数执行完毕之后再开启它。
+// 于是接下来中断又被激活了。
+
+void
+handle_level_irq(unsigned int irq, struct irq_desc *desc)
+{
+	struct irqaction *action;
+	irqreturn_t action_ret;
+
+	raw_spin_lock(&desc->lock);
+	mask_ack_irq(desc);
+
+	if (unlikely(desc->status & IRQ_INPROGRESS))
+		goto out_unlock;
+	desc->status &= ~(IRQ_REPLAY | IRQ_WAITING);
+	kstat_incr_irqs_this_cpu(irq, desc);
+
+	/*
+	 * If its disabled or no action available
+	 * keep it masked and get out of here
+	 */
+	action = desc->action;
+	if (unlikely(!action || (desc->status & IRQ_DISABLED)))
+		goto out_unlock;
+
+	desc->status |= IRQ_INPROGRESS;
+	raw_spin_unlock(&desc->lock);
+
+	action_ret = handle_IRQ_event(irq, action);
+	if (!noirqdebug)
+		note_interrupt(irq, desc, action_ret);
+
+	raw_spin_lock(&desc->lock);
+	desc->status &= ~IRQ_INPROGRESS;
+
+	if (!(desc->status & (IRQ_DISABLED | IRQ_ONESHOT)))
+		unmask_irq(desc);
+out_unlock:
+	raw_spin_unlock(&desc->lock);
+}
+
+handle_fasteoi_irq
+
+handle_edge_irq
+
+/**
+ *	handle_edge_irq - edge type IRQ handler
+ *	@irq:	the interrupt number
+ *	@desc:	the interrupt description structure for this irq
+ *
+ *	Interrupt occures on the falling and/or rising edge of a hardware
+ *	signal. The occurence is latched into the irq controller hardware
+ *	and must be acked in order to be reenabled. After the ack another
+ *	interrupt can happen on the same source even before the first one
+ *	is handled by the associated event handler. If this happens it
+ *	might be necessary to disable (mask) the interrupt depending on the
+ *	controller hardware. This requires to reenable the interrupt inside
+ *	of the loop which handles the interrupts which have arrived while
+ *	the handler was running. If all pending interrupts are handled, the
+ *	loop is left.
+ */
+
+上升沿或下降沿信号触发这个中断，中断发生事件会锁存直到中断控制器处理了它，并且
+重新使能它。一旦应答了这个中断后，
+	
+如果当前中断正在处理或被禁止了，则锁存了此次中断的触发事件(置位IRQ_PENDING)
+这样一来，这次中断不会被丢失。
+
+	if (unlikely((desc->status & (IRQ_INPROGRESS | IRQ_DISABLED)) ||
+		    !desc->action)) {
+		desc->status |= (IRQ_PENDING | IRQ_MASKED);
+		mask_ack_irq(desc);
+		goto out_unlock;
+	}
+
+
+handle_percpu_irq
+
+
+
+键盘: tc35894 -> handle_edge_irq
+MR Sensor: gpio -> handle_level_irq
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enable_irq_wake(unsigned int irq)
+  -> set_irq_wake(irq, 1)
+     -> set_irq_wake_real(irq, on);
+
+
+static int set_irq_wake_real(unsigned int irq, unsigned int on)
+{
+	struct irq_desc *desc = irq_to_desc(irq);
+	int ret = -ENXIO;
+
+	if (desc->irq_data.chip->irq_set_wake)
+		ret = desc->irq_data.chip->irq_set_wake(&desc->irq_data, on);
+
+	return ret;
+}
+
+// 根据函数指针，可以跟到平台代码里
+// arch/arm/plat-mxc/gpio.c
+
+static struct irq_chip gpio_irq_chip = {
+	.name = "GPIO",
+	.irq_ack = gpio_ack_irq,
+	.irq_mask = gpio_mask_irq,
+	.irq_unmask = gpio_unmask_irq,
+	.irq_set_type = gpio_set_irq_type,
+	.irq_set_wake = gpio_set_wake_irq,
+};
+
+//对于GPIO中断，有许多个GPIO口共用一个中断号，所以还要继续使能它的上一级中断号irq_high
+static int gpio_set_wake_irq(struct irq_data *d, u32 enable)
+{
+	u32 gpio = irq_to_gpio(d->irq);
+	u32 gpio_idx = gpio & 0x1F;
+	struct mxc_gpio_port *port = &mxc_gpio_ports[gpio / 32];
+
+	if (enable) {
+		if (port->irq_high && (gpio_idx >= 16))
+			enable_irq_wake(port->irq_high);
+		else
+			enable_irq_wake(port->irq);
+	} else {
+		if (port->irq_high && (gpio_idx >= 16))
+			disable_irq_wake(port->irq_high);
+		else
+			disable_irq_wake(port->irq);
+	}
+
+	return 0;
+}
+
+// 直到最后来到中断控制器中 arch/arm/plat-mxc/tzic.c
+static struct mxc_irq_chip mxc_tzic_chip = {
+	.base = {
+		.name = "MXC_TZIC",
+		.irq_ack = tzic_mask_irq,
+		.irq_mask = tzic_mask_irq,
+		.irq_unmask = tzic_unmask_irq,
+		.irq_set_wake = tzic_set_wake_irq,
+	},
+#ifdef CONFIG_FIQ
+	.set_irq_fiq = tzic_set_irq_fiq,
+#endif
+};
+
+static int mx5_suspend_enter(suspend_state_t state)
+{
+	if (gpc_dvfs_clk == NULL)
+		gpc_dvfs_clk = clk_get(NULL, "gpc_dvfs_clk");
+	/* gpc clock is needed for SRPG */
+	clk_enable(gpc_dvfs_clk);
+	switch (state) {
+	case PM_SUSPEND_MEM:
+		//
+		mxc_cpu_lp_set(STOP_POWER_OFF);
+		break;
+	case PM_SUSPEND_STANDBY:
+		mxc_cpu_lp_set(WAIT_UNCLOCKED_POWER_OFF);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	//
+	if (tzic_enable_wake(0) != 0)
+		return -EAGAIN;
+
+	if (state == PM_SUSPEND_MEM) {
+
+		// 调用电源管理芯片的休眠处理，主要是降低一些模块的电压
+		if (pm_data && pm_data->suspend_enter)
+			pm_data->suspend_enter();
+		if (cpu_is_mx51() || cpu_is_mx53()) {
+			/* Run the suspend code from iRAM. */
+			suspend_in_iram(suspend_param1, NULL, NULL);
+			...
+		} else {
+			...
+		}
+		if (pm_data && pm_data->suspend_exit)
+			pm_data->suspend_exit();
+	} else {
+			cpu_do_idle();
+	}
+	clk_disable(gpc_dvfs_clk);
+
+	return 0;
+}
+

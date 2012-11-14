@@ -1,4 +1,45 @@
 
+enter_state()
+  |-> sys_sync();
+  |-> suspend_prepare(void)
+  |     |-> pm_prepare_console();
+  |     |-> pm_notifier_call_chain(PM_SUSPEND_PREPARE);
+  |     |-> usermodehelper_disable();
+  |     |-> suspend_freeze_processes();
+  |     |   `-> freeze_processes()
+  |     |       |-> try_to_freeze_tasks(true)
+  |     |       `-> try_to_freeze_tasks(false)
+  |     |-> suspend_thaw_processes();
+  |     |-> usermodehelper_enable();
+  |     |-> pm_notifier_call_chain(PM_POST_SUSPEND);
+  |     `-> pm_restore_console();
+  |-> suspend_devices_and_enter(state);
+  |     |-> suspend_ops->begin(state);
+  |     |-> suspend_console();
+  |     |-> saved_mask = clear_gfp_allowed_mask(GFP_IOFS);
+  |     |-> suspend_test_start();
+  |     |-> error = dpm_suspend_start(PMSG_SUSPEND);
+  |     |-> suspend_enter(state);
+  |     |    
+  |     | 
+  |     | 
+  |     |-> *************************************
+  |     |-> suspend_test_start();
+  |     |-> dpm_resume_end(PMSG_RESUME);
+  |     |-> suspend_test_finish("resume devices");
+  |     |-> set_gfp_allowed_mask(saved_mask);
+  |     |-> resume_console();
+  |     | 	
+  |     |-> suspend_ops->end();
+  |     |-> suspend_ops->recover();
+  `-> suspend_finish();
+  
+
+suspend_enter(state)
+	1. suspend_ops->prepare();
+	2. dpm_suspend_noirq(PMSG_SUSPEND);
+
+
 http://blog.csdn.net/lizhiguo0532/article/details/6453546
 
 == 电源管理 kernel 与 userspace 的交互 ==

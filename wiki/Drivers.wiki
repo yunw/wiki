@@ -32,6 +32,9 @@
 - [[linux-power-system-0]]
 - [[linux-power-system-1]]
 - [[linux-power-system-2]]
+- [[linux-power-system-3]]
+
+
 
 - [[cpufreq]]
 
@@ -43,5 +46,13 @@
 [[platform_device]]
  
 
+== sound ==
+- [[Audio-001]]
+- [[alsa]]
 
 
+- [[wireless]]
+
+
+
+- [[DDR]]

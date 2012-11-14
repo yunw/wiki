@@ -17,4 +17,14 @@ git push aosp :jj07
 git config branch.jj07.remote aosp 
 git config branch.jj07.merge refs/heads/jj07
 
+或者
+
+git co -b jj07 --track aosp/jj07
+
 这样设置后，在本地的jj07分支中，使用 git pull/push 会自动与远程仓库aosp中的jj07分支进行数据同步
+
+== git log 换行 ==
+
+git log有时一行太长而看不到，使用下面命令设置
+
+git config --global core.pager 'less -+$LESS -FRX'

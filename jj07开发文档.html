@@ -126,7 +126,7 @@ repo 工具是对 git 的封装，我们内部提交代码到服务器仍然使�
 
 <ul>
 <li>
-git co -b jj07 aosp/jj07
+git co -b jj07 --track aosp/jj07
 <br />  建立本地 jj07 分支用于跟踪远程仓库中的 jj07 分支。 <strong>如果之前已经创建过则无需再创建</strong> 。
 </li>
 </ul>
@@ -267,6 +267,12 @@ git pull
 </pre>
 </li>
 </ul>
+
+
+
+<p>
+./repo forall -c git co -b fv40 --track aosp/fv40
+</p>
 
 </body>
 </html>

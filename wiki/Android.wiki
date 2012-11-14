@@ -42,3 +42,8 @@
 - [[PMIC-DA9053]]
 
 - [[HS13 SDK Installation Document]]
+
+[[mx53/mx53]]
+
+[[fv40/fv40]]
+

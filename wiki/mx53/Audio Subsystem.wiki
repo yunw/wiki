@@ -1,0 +1,19 @@
+
+音频子系统下的模块有：SSI-1, SSI-2, SSI-3, AUDMUX, ESAI, SPDIF, ASRC。
+另外，IOMUXC也需要适当的配置。
+
+	SSI-1,2,3 是用于传输音频数据的同步串行接口。SSI-1,3位于外设总线，SSI-2
+	位于共享外设总线。它们并非直接连接到IOMUXC，而是连接到数字音频转接器
+	(Digital Audio Multiplexer, AUDMUX).
+	
+	AUDMUX为串行接口(SSI-1/SSI-2)提供灵活且可编程的路由。AUDMUX并不解码或亲
+	自处理数据。在ARM低电模式时仍可以工作。
+
+	ESAI(Enhanced Serial Audio Interface)提供全双工串口与串口外设通信。ESAI
+	包含独立的发送器和接收器，这二者有自己的时钟发生器。ESAI与IOMUXC和
+	ESAI_BIFIFO子模块连接。
+
+	SPDIF是一个立体收发器，处理器使用它来接收和发送数字音频。
+
+	ASRC异步采样频率转换器
+

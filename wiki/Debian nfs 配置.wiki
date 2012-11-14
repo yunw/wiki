@@ -1,6 +1,6 @@
 
 1. 安装
-aptitude install nfs-common nfs-kernel-server portmap
+sudo apt-get install nfs-common nfs-kernel-server portmap
 
 2. 重启服务
 sudo service nfs-common restart
