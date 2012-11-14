@@ -1,0 +1,117 @@
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../style.css" />
+<title>声卡的创建</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+
+<p>
+<a href="http://blog.csdn.net/droidphone/article/details/6289712">http://blog.csdn.net/droidphone/article/details/6289712</a>
+</p>
+
+<p>
+1. 创建并实例化一个声卡结构(struct snd_card)
+</p>
+
+
+<p>
+int snd_card_create(int idx, const char *xid,
+</p>
+<blockquote>
+struct module *module, int extra_size,
+struct snd_card **card_ret)
+</blockquote>
+<ul>
+<li>
+idx : 声卡编号
+</li>
+<li>
+xid : 声号标识符
+</li>
+<li>
+module : THIS_MODULE
+</li>
+<li>
+extra_size : 在snd_card结构体后面追加分配额外的空间，card-&gt;private_data指向这个空间
+<br />		       这部分空间可以作为声卡的专有数据。
+</li>
+<li>
+card_ret : 返回snd_card指针
+<br />   1) 创建 snd_card 结构
+<br />   2) 如果idx为负值，则选择一个编号idx给这个声卡
+<br />   3) 初始化 snd_card 成员。其中有 card-&gt;devices 这是一个链表，用于记录挂载这张声卡上的所有设备
+<br />   4) 创建controls
+<br />   5) 创建proc文件系统中的结点：/proc/asound/card[idx]
+</li>
+</ul>
+   
+<p>
+2. 创建声卡上的设备
+</p>
+
+<p>
+一个声卡上可以有多个功能部件，每个部件都作为一个逻辑设备存在。声卡创建好了之后
+再创建它上面的各个逻辑设备，如：PCM/Mixer/MIDI/timer/control/jack 等。
+每个设备的创建最终都调用 snd_device_new() 来创建一个 snd_device，并挂接到
+snd_card的devices链表上。
+</p>
+
+<ul>
+<li>
+PCM     -- snd_pcm_new()
+</li>
+<li>
+RAWMIDI -- snd_rawmidi_new()
+</li>
+<li>
+CONTROL -- snd_ctl_create()
+</li>
+<li>
+TIMER   -- snd_timer_new()
+</li>
+<li>
+INFO    -- snd_card_proc_new()
+</li>
+<li>
+JACK    -- snd_jack_new()
+</li>
+</ul>
+
+<p>
+查看PCM设备的创建过程： snd_pcm_new()
+	1) 创建 struct snd_pcm 并根据参数初始化它
+	2) 创建PCM类型的设备snd_device_new(card, SNDRV_DEV_PCM, pcm, &amp;ops) 
+</p>
+<blockquote>
+将 struct snd_pcm 结构挂到 dev-&gt;device_data
+</blockquote>
+<p>
+			dev-&gt;device_data = pcm;
+			dev-&gt;ops = ops;
+</p>
+<blockquote>
+ops中有注册/断开/释放PCM设备(snd_pcm)的操作函数。
+最后把这个snd_device设备挂载到声卡的设备链表上。
+</blockquote>
+	
+
+<p>
+3. 注册声卡
+</p>
+
+<p>
+int snd_card_register(struct snd_card *card)
+</p>
+
+<p>
+这个函数注册声卡上的所有设备，应该在声卡初始化的最后调用
+</p>
+	
+<p>
+	1) 创建 /sys/class/sound/card[idx]
+	2) 注册声卡链表上的所有设备(设备创建时已经设置好了注册的回调函数snd_device_ops)
+</p>
+
+</body>
+</html>

@@ -107,6 +107,7 @@
 </p>
  
 
+<<<<<<< HEAD
 <h2 id="toc_0.8">sound</h2>
 <ul>
 <li>
@@ -125,15 +126,15 @@
 </ul>
 
 
-<ul>
-<li>
-<a href="sound/ALSA.html">sound/ALSA</a>
-</li>
-</ul>
 
 <ul>
 <li>
 <a href="DDR.html">DDR</a>
+=======
+<ul>
+<li>
+<a href="sound/ALSA.html">sound/ALSA</a>
+>>>>>>> d04033724bf471e9e56c83a5b4808984c1622192
 </li>
 </ul>
 

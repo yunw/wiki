@@ -46,6 +46,7 @@
 [[platform_device]]
  
 
+<<<<<<< HEAD
 == sound ==
 - [[Audio-001]]
 - [[alsa]]
@@ -54,6 +55,8 @@
 - [[wireless]]
 
 
+=======
 - [[sound/ALSA]]
+>>>>>>> d04033724bf471e9e56c83a5b4808984c1622192
 
 - [[DDR]]
